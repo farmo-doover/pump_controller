@@ -1,0 +1,1 @@
+python3.11 -m pydoover deploy_config doover_config.json --profile staging --agent 319f00e5-0b28-4f3d-ad4d-d908546659f2 --enable-traceback

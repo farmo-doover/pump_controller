@@ -1,0 +1,38 @@
+{
+    "deployment_package_dir": "",
+    "file_deployments": {
+        "files": [
+            {
+                "name": "SchedulerComponent",
+                "file_dir": "assets/SchedulerComponent.js",
+                "mime_type": "text/javascript"
+            }
+        ]
+    },
+    "deployment_channel_messages": [
+        {
+            "channel_name": "ui_cmds",
+            "channel_message": {}
+        },
+        {
+            "channel_name": "ui_state",
+            "channel_message": {
+                "state": {
+                    "children": {
+                        "SchedulerComponent": {
+                            "type": "uiRemoteComponent",
+                            "name": "SchedulerComponent",
+                            "componentUrl": "SchedulerComponent",
+                            "children": {}
+                        },
+                        "node_connection_info": {
+                            "type": "uiConnectionInfo",
+                            "name": "node_connection_info",
+                            "connectionType": "continuous"
+                        }
+                    }
+                }
+            }
+        }
+    ]
+}
