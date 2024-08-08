@@ -202,7 +202,7 @@ export default class RemoteComponent extends RemoteAccess {
 
         return (
             <Box>
-                <Box display="flex" justifyContent="space-around" alignItems="center" position="relative" marginBottom={4}>
+                <Box display="flex" justifyContent="space-around" alignItems="center" position="relative" marginTop="10px" marginBottom="15px">
                     <Button variant="contained" color="primary" onClick={this.handleClickOpen}>
                         Add Schedule
                     </Button>
@@ -325,129 +325,137 @@ export default class RemoteComponent extends RemoteAccess {
                         </Button>
                     </DialogActions>
                 </Dialog>
-                <Grid container spacing={0.5} justifyContent="center" marginTop={2}>
-                    <Grid item xs={6}>
-                        <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Start Time</Typography>
+                {timeSlots.length > 0 ? (
+                    <div>
+                    <Grid container spacing={0.5} justifyContent="center" marginTop={2} padding="5px">
+                        <Grid item xs={6}>
+                            {/* <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Start Time</Typography> */}
+                            <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Start Time</Typography>
+                        </Grid>
+                        <Grid item xs={3}>
+                            {/* <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Duration</Typography> */}
+                            <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Duration</Typography>
+                        </Grid>
+                        <Grid item xs={3}>
+                            {/* <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Action</Typography> */}
+                            <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Action</Typography>
+                        </Grid>
+                        {currentPageTimeSlots.map((slot, index) => (
+                            <React.Fragment key={index}>
+                                <Grid item xs={6}>
+                                    <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
+                                </Grid>
+                                <Grid item xs={3}>
+                                    <Typography align="center">{slot.duration} hrs</Typography>
+                                </Grid>
+                                <Grid item xs={3}>
+                                    <Box display="flex" justifyContent="space-between">
+                                        <Button
+                                            variant="contained"
+                                            sx={{
+                                                backgroundColor: '#FFC107',
+                                                color: '#FFFFFF',
+                                                minWidth: '48%',
+                                                width: '48%',
+                                                '&:hover': {
+                                                    backgroundColor: '#FFA000'
+                                                }
+                                            }}
+                                            onClick={() => this.handleEditOpen(index)}
+                                        >
+                                            <EditIcon/>
+                                        </Button>
+                                        <Button
+                                            variant="contained"
+                                            sx={{
+                                                backgroundColor: '#F44336',
+                                                color: '#FFFFFF',
+                                                minWidth: '48%',
+                                                width: '48%',
+                                                '&:hover': {
+                                                    backgroundColor: '#D32F2F'
+                                                }
+                                            }}
+                                            onClick={() => this.handleDelete(index)}
+                                        >
+                                            <RemoveCircleIcon/>
+                                        </Button>
+                                    </Box>
+                                </Grid>
+                            </React.Fragment>
+                        ))}
                     </Grid>
-                    <Grid item xs={3}>
-                        <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Duration</Typography>
-                    </Grid>
-                    <Grid item xs={3}>
-                        <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Action</Typography>
-                    </Grid>
-                    {currentPageTimeSlots.map((slot, index) => (
-                        <React.Fragment key={index}>
-                            <Grid item xs={6}>
-                                <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
-                            </Grid>
-                            <Grid item xs={3}>
-                                <Typography align="center">{slot.duration} hrs</Typography>
-                            </Grid>
-                            <Grid item xs={3}>
-                                <Box display="flex" justifyContent="space-between">
-                                    <Button
-                                        variant="contained"
-                                        sx={{
-                                            backgroundColor: '#FFC107',
-                                            color: '#FFFFFF',
-                                            minWidth: '48%',
-                                            width: '48%',
-                                            '&:hover': {
-                                                backgroundColor: '#FFA000'
-                                            }
-                                        }}
-                                        onClick={() => this.handleEditOpen(index)}
-                                    >
-                                        <EditIcon/>
-                                    </Button>
-                                    <Button
-                                        variant="contained"
-                                        sx={{
-                                            backgroundColor: '#F44336',
-                                            color: '#FFFFFF',
-                                            minWidth: '48%',
-                                            width: '48%',
-                                            '&:hover': {
-                                                backgroundColor: '#D32F2F'
-                                            }
-                                        }}
-                                        onClick={() => this.handleDelete(index)}
-                                    >
-                                        <RemoveCircleIcon/>
-                                    </Button>
-                                </Box>
-                            </Grid>
-                        </React.Fragment>
-                    ))}
-                </Grid>
-                <Box display="flex" justifyContent="center" alignItems="center" marginTop={2}>
-                    <Button
-                        variant="contained"
-                        onClick={this.handlePreviousPage}
-                        disabled={!isPageInputActive && currentPage === 0}
-                        sx={{
-                            backgroundColor: isPageInputActive ? '#F44336' : '#000000',
-                            color: '#FFFFFF',
-                            marginRight: '10px',
-                            '&:hover': {
-                                backgroundColor: isPageInputActive ? '#D32F2F' : '#333333'
-                            }
-                        }}
-                    >
-                        &lt;
-                    </Button>
-                    {isPageInputActive ? (
-                        <TextField
-                            type="number"
-                            value={pageInputValue}
-                            onChange={this.handlePageInputChange}
-                            sx={{
-                                width: '60px',
-                            }}
-                            InputProps={{
-                                style: {
-                                    height: '37px',
-                                    padding: '0px',
-                                    textAlign: 'center',
-                                }
-                            }}
-                            inputProps={{ 
-                                style: { textAlign: 'center' } 
-                            }}
-                        />
-                    ) : (
+                    <Box display="flex" justifyContent="center" alignItems="center" marginTop={2}>
+                    
                         <Button
                             variant="contained"
-                            onClick={this.handlePageInputToggle}
-                            disabled={totalPages <= 1}
+                            onClick={this.handlePreviousPage}
+                            disabled={!isPageInputActive && currentPage === 0}
                             sx={{
-                                backgroundColor: totalPages <= 1 ? '#333333' : '#000000',
+                                backgroundColor: isPageInputActive ? '#F44336' : '#000000',
                                 color: '#FFFFFF',
-                                height: '36px',
+                                marginRight: '10px',
                                 '&:hover': {
-                                    backgroundColor: '#333333'
+                                    backgroundColor: isPageInputActive ? '#D32F2F' : '#333333'
                                 }
                             }}
                         >
-                            {currentPage + 1}/{totalPages}
+                            &lt;
                         </Button>
-                    )}
-                    <Button
-                        variant="contained"
-                        onClick={isPageInputActive ? this.handleJumpToPage : this.handleNextPage}
-                        disabled={!isPageInputActive && currentPage >= totalPages - 1}
-                        sx={{
-                            backgroundColor: isPageInputActive ? '#2196F3' : '#000000',
-                            color: '#FFFFFF',
-                            marginLeft: '10px',
-                            '&:hover': {
-                                backgroundColor: isPageInputActive ? '#1976D2' : '#333333'
-                            }
-                        }}
-                    >
-                        &gt;
-                    </Button>
-                </Box>
+                        {isPageInputActive ? (
+                            <TextField
+                                type="number"
+                                value={pageInputValue}
+                                onChange={this.handlePageInputChange}
+                                sx={{
+                                    width: '60px',
+                                }}
+                                InputProps={{
+                                    style: {
+                                        height: '37px',
+                                        padding: '0px',
+                                        textAlign: 'center',
+                                    }
+                                }}
+                                inputProps={{ 
+                                    style: { textAlign: 'center' } 
+                                }}
+                            />
+                        ) : (
+                            <Button
+                                variant="contained"
+                                onClick={this.handlePageInputToggle}
+                                disabled={totalPages <= 1}
+                                sx={{
+                                    backgroundColor: totalPages <= 1 ? '#333333' : '#000000',
+                                    color: '#FFFFFF',
+                                    height: '36px',
+                                    '&:hover': {
+                                        backgroundColor: '#333333'
+                                    }
+                                }}
+                            >
+                                {currentPage + 1}/{totalPages}
+                            </Button>
+                        )}
+                        <Button
+                            variant="contained"
+                            onClick={isPageInputActive ? this.handleJumpToPage : this.handleNextPage}
+                            disabled={!isPageInputActive && currentPage >= totalPages - 1}
+                            sx={{
+                                backgroundColor: isPageInputActive ? '#2196F3' : '#000000',
+                                color: '#FFFFFF',
+                                marginLeft: '10px',
+                                '&:hover': {
+                                    backgroundColor: isPageInputActive ? '#1976D2' : '#333333'
+                                }
+                            }}
+                        >
+                            &gt;
+                        </Button>
+                    </Box>
+                </div>
+                ) : (<center><h3>Nothing Scheduled</h3></center>)}
             </Box>
         );
     }

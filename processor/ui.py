@@ -27,7 +27,7 @@ def construct_ui(processor):
                 ui.Option("autoLevelSchedule", "Tank Level + Schedule"),
             ],
         ),
-        ui.Action("fillOnce", "Start Now", colour="green", requires_confirm=True),
+        ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
         ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
         ui.AlertStream("significantEvents", "Notify me of any problems"),
 
@@ -42,7 +42,7 @@ def construct_ui(processor):
                 ),
                 ui.NumericVariable(
                     "targetTankLevel",
-                    "Tank Level",
+                    "Tank Level (%)",
                     dec_precision=0,
                     ranges=[
                         ui.Range("Start", 0, 50, ui.Colour.yellow),
