@@ -8,6 +8,7 @@ def construct_ui(processor):
 
     ui_elems = (
         create_multiplot(),
+        ui.AlertStream("significantEvents", "Notify me of any problems"),
         ui.BooleanVariable("pumpState", "Pump Running"),
         ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
             dec_precision=2,
@@ -29,7 +30,6 @@ def construct_ui(processor):
         ),
         ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
         ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
-        ui.AlertStream("significantEvents", "Notify me of any problems"),
 
         ui.Submodule("levelSettingsSubmodule", "Level Settings",
             children=[
