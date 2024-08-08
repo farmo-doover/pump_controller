@@ -8,7 +8,16 @@ def construct_ui(processor):
 
     ui_elems = (
         create_multiplot(),
-        ui.AlertStream("significantEvents", "Notify me of any problems"),
+        ui.BooleanVariable("pumpState", "Pump Running"),
+        ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
+            dec_precision=2,
+            form=ui.Widget.radial,
+            ranges=[
+                ui.Range("Low", 0, 1, ui.Colour.blue),
+                ui.Range("Pumping", 1, 3, ui.Colour.green),
+                ui.Range("High", 3, 4, ui.Colour.yellow),
+            ]
+        ),
         ui.StateCommand("pumpMode", "Pump Mode", 
             user_options=[
                 ui.Option("off", "Off"),
@@ -20,17 +29,8 @@ def construct_ui(processor):
         ),
         ui.Action("fillOnce", "Start Now", colour="green", requires_confirm=True),
         ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
-        ui.BooleanVariable("pumpState", "Pump Running"),
-        ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
-            dec_precision=2,
-            form=ui.Widget.radial,
-            ranges=[
-                ui.Range("Low", 0, 1, ui.Colour.blue),
-                ui.Range("Pumping", 1, 3, ui.Colour.green),
-                ui.Range("High", 3, 4, ui.Colour.yellow),
-            ]
-        ),
-        
+        ui.AlertStream("significantEvents", "Notify me of any problems"),
+
         ui.Submodule("levelSettingsSubmodule", "Level Settings",
             children=[
                 ui.StateCommand("targetSensor", "Tank Sensor",
@@ -56,12 +56,12 @@ def construct_ui(processor):
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
                     default_val=[50, 90]
                 ),
-                ui.Slider("levelAlert", "Alert Me At (%)", 
+                ui.Slider("levelAlert", "Low Level Alert (%)", 
                     min_val=0, max_val=100, step_size=1, dual_slider=False,
                     inverted=False, icon="fa-regular fa-bell", show_activity=True,
                     default_val=40
                 ),
-                ui.Slider("runtimeAlert", "Alert Me If Pump Runs Longer Than (hrs)", 
+                ui.Slider("runtimeAlert", "Pump Runtime Alert (hrs)", 
                     min_val=0, max_val=50, step_size=1, dual_slider=False,
                     inverted=False, icon="fa-regular fa-bell", show_activity=True,
                     default_val=12
@@ -95,13 +95,16 @@ def create_multiplot():
     overview_plot_series = [
         "targetTankLevel",
         "pumpState",
+        "pumpPressure",
     ]
     overview_plot_colours = [
         "blue",
         "tomato",
+        "green",
     ]
     overview_plot_active = [
         True,
+        False,
         False,
     ]
 

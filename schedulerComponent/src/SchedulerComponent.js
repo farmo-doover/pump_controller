@@ -133,8 +133,8 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     formatDateTime = (date) => {
-        // return format(date, 'eee dd MMM hh:mm aa');
-        return format(date, 'dd/MM hh:mm aa');
+        return format(date, 'eee dd MMM hh:mm aa');
+        // return format(date, 'dd/MM hh:mm aa');
     };
 
     getCurrentPageTimeSlots = () => {
@@ -326,24 +326,24 @@ export default class RemoteComponent extends RemoteAccess {
                     </DialogActions>
                 </Dialog>
                 <Grid container spacing={0.5} justifyContent="center" marginTop={2}>
-                    <Grid item xs={5}>
+                    <Grid item xs={6}>
                         <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Start Time</Typography>
                     </Grid>
                     <Grid item xs={3}>
                         <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Duration</Typography>
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={3}>
                         <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Action</Typography>
                     </Grid>
                     {currentPageTimeSlots.map((slot, index) => (
                         <React.Fragment key={index}>
-                            <Grid item xs={5}>
+                            <Grid item xs={6}>
                                 <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
                             </Grid>
                             <Grid item xs={3}>
                                 <Typography align="center">{slot.duration} hrs</Typography>
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={3}>
                                 <Box display="flex" justifyContent="space-between">
                                     <Button
                                         variant="contained"
