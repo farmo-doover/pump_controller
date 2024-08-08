@@ -3,8 +3,11 @@ import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, F
 import React, { Component } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { addDays, addWeeks, format } from 'date-fns';
+
+import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
+import EditIcon from '@mui/icons-material/Edit';
 
 const PAGE_SLOT_MAX = 15;
 
@@ -130,7 +133,8 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     formatDateTime = (date) => {
-        return format(date, 'eee dd MMM hh:mm aa');
+        // return format(date, 'eee dd MMM hh:mm aa');
+        return format(date, 'dd/MM hh:mm aa');
     };
 
     getCurrentPageTimeSlots = () => {
@@ -198,9 +202,9 @@ export default class RemoteComponent extends RemoteAccess {
 
         return (
             <Box>
-                <Box display="flex" justifyContent="center" alignItems="center" position="relative" marginBottom={4}>
+                <Box display="flex" justifyContent="space-around" alignItems="center" position="relative" marginBottom={4}>
                     <Button variant="contained" color="primary" onClick={this.handleClickOpen}>
-                        Create Schedule
+                        Add Schedule
                     </Button>
                     {timeSlots.length > 0 && (
                         <Button
@@ -208,7 +212,7 @@ export default class RemoteComponent extends RemoteAccess {
                             color="secondary"
                             onClick={this.handleClearSchedule}
                             sx={{
-                                position: 'absolute',
+                                // position: 'absolute',
                                 right: 0,
                                 backgroundColor: '#F44336',
                                 color: '#FFFFFF',
@@ -217,7 +221,7 @@ export default class RemoteComponent extends RemoteAccess {
                                 }
                             }}
                         >
-                            CLEAR SCHEDULE
+                            CLEAR
                         </Button>
                     )}
                 </Box>
@@ -322,10 +326,10 @@ export default class RemoteComponent extends RemoteAccess {
                     </DialogActions>
                 </Dialog>
                 <Grid container spacing={0.5} justifyContent="center" marginTop={2}>
-                    <Grid item xs={4}>
+                    <Grid item xs={5}>
                         <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Start Time</Typography>
                     </Grid>
-                    <Grid item xs={4}>
+                    <Grid item xs={3}>
                         <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Duration</Typography>
                     </Grid>
                     <Grid item xs={4}>
@@ -333,10 +337,10 @@ export default class RemoteComponent extends RemoteAccess {
                     </Grid>
                     {currentPageTimeSlots.map((slot, index) => (
                         <React.Fragment key={index}>
-                            <Grid item xs={4}>
+                            <Grid item xs={5}>
                                 <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
                             </Grid>
-                            <Grid item xs={4}>
+                            <Grid item xs={3}>
                                 <Typography align="center">{slot.duration} hrs</Typography>
                             </Grid>
                             <Grid item xs={4}>
@@ -346,6 +350,7 @@ export default class RemoteComponent extends RemoteAccess {
                                         sx={{
                                             backgroundColor: '#FFC107',
                                             color: '#FFFFFF',
+                                            minWidth: '48%',
                                             width: '48%',
                                             '&:hover': {
                                                 backgroundColor: '#FFA000'
@@ -353,13 +358,14 @@ export default class RemoteComponent extends RemoteAccess {
                                         }}
                                         onClick={() => this.handleEditOpen(index)}
                                     >
-                                        Edit
+                                        <EditIcon/>
                                     </Button>
                                     <Button
                                         variant="contained"
                                         sx={{
                                             backgroundColor: '#F44336',
                                             color: '#FFFFFF',
+                                            minWidth: '48%',
                                             width: '48%',
                                             '&:hover': {
                                                 backgroundColor: '#D32F2F'
@@ -367,7 +373,7 @@ export default class RemoteComponent extends RemoteAccess {
                                         }}
                                         onClick={() => this.handleDelete(index)}
                                     >
-                                        Delete
+                                        <RemoveCircleIcon/>
                                     </Button>
                                 </Box>
                             </Grid>

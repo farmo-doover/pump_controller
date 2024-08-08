@@ -7,7 +7,6 @@
     "build": "webpack --config webpack.config.js",
     "start": "webpack --config webpack.config.js && serve -s ../assets -l 8001",
     "watch": "webpack --config webpack.config.js --watch --mode development"
-    
   },
   "author": "Jarrod Jackson & Nik Vadalma",
   "license": "ISC",
@@ -20,16 +19,18 @@
     "@mui/material": "^5.12.3",
     "@mui/styled-engine": "^5.12.3",
     "@mui/system": "^5.12.3",
+    "@mui/x-date-pickers": "^7.12.0",
     "babel-loader": "^9.1.2",
+    "date-fns": "^3.6.0",
     "external-remotes-plugin": "^1.0.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@ngrok/ngrok": "^0.5.2",
     "css-loader": "^6.8.1",
     "html-webpack-plugin": "^5.5.3",
     "style-loader": "^3.3.3",
-    "@ngrok/ngrok": "^0.5.2",
     "webpack": "^5.82.1",
     "webpack-cli": "^5.1.1",
     "webpack-dev-server": "^4.15.1"

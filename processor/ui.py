@@ -19,10 +19,11 @@ def construct_ui(processor):
             ],
         ),
         ui.Action("fillOnce", "Start Now", colour="green", requires_confirm=True),
-        ui.Action("stopNow", "Stop Now", colour="red"),
+        ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
         ui.BooleanVariable("pumpState", "Pump Running"),
         ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
             dec_precision=2,
+            form=ui.Widget.radial,
             ranges=[
                 ui.Range("Low", 0, 1, ui.Colour.blue),
                 ui.Range("Pumping", 1, 3, ui.Colour.green),
