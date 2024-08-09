@@ -221,7 +221,7 @@ export default class RemoteComponent extends RemoteAccess {
                                 }
                             }}
                         >
-                            CLEAR
+                            CLEAR ALL
                         </Button>
                     )}
                 </Box>
