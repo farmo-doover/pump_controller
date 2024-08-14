@@ -9,10 +9,29 @@ from datetime import datetime, timedelta
 
 from client import Client
 
-class ScheduleFrequency(enum.Enum):
+class ScheduleFrequency(str, enum.Enum):
     daily = "daily"
     weekly = "weekly"
     once = "once"
+
+    def __str__(self):
+        return self.value
+
+
+def time_to_epoch(time: Union[datetime, int, str]) -> int:
+    if time:
+        if isinstance(time, datetime):
+            time = int(time.timestamp())
+        elif isinstance(time, str):
+            try:
+                time = datetime.fromisoformat(time).timestamp()
+            except ValueError:
+                raise ValueError("time must be either a datetime, epoch seconds or ISO formatted string")
+        elif isinstance(time, (int, float)):
+            time = int(time)
+        else:
+            raise ValueError("time must be either a datetime, epoch seconds or ISO formatted string")
+    return time
 
 
 class ScheduleItem:
@@ -41,21 +60,17 @@ class ScheduleItem:
 
         if not schedule_id:
             schedule_id = uuid.uuid4().int
+            # schedule_id = int(str(uuid.uuid4().int)[:8])
 
-        if isinstance(start_time, datetime):
-            start_time = start_time.timestamp()
-        if end_time and isinstance(end_time, datetime):
-            end_time = end_time.timestamp()
-
-        if duration and isinstance(duration, timedelta):
-            duration = duration.total_seconds()
-            end_time = start_time + duration
+        ## Define the private fields, these are used to calculate the start_time and end_time from whatever type is provided
+        self._start_time = None
+        self._duration = None
 
         self.imei = imei # type: str
         self.schedule_id = schedule_id # type: int
         self.start_time = start_time # type: int, epoch secs UTC
         self.end_time = end_time # type: int, epoch secs UTC
-        self.frequency = frequency # type: str, ["Daily", "Weekly", "Once"]
+        self.frequency = frequency # type: ScheduleFrequency
 
         if json_data:
             self.from_json(json_data)
@@ -63,41 +78,72 @@ class ScheduleItem:
     def set_client(self, client: Client) -> None:
         self.client = client
 
+    @property
+    def start_time(self) -> Optional[int]:
+        return self._start_time
+
+    @start_time.setter
+    def start_time(self, start_time: Any) -> None:
+        self._start_time = time_to_epoch(start_time)
+
+    @property
+    def end_time(self) -> Optional[int]:
+        return self._start_time + self._duration if self._start_time and self._duration else None
+
+    @end_time.setter
+    def end_time(self, end_time: Any) -> None:
+        end_time = time_to_epoch(end_time)
+        self._duration = end_time - self._start_time if self._start_time else None
+
+    @property
+    def duration(self) -> Optional[int]:
+        return self._duration
+    
+    @duration.setter
+    def duration(self, duration: Any) -> None:
+        if duration:
+            if isinstance(duration, timedelta):
+                duration = int(duration.total_seconds())
+            elif not isinstance(duration, (int, float)):
+                raise ValueError("duration must be either a timedelta or seconds")
+        self._duration = duration
+
     def from_json(self, json_data: dict) -> None:
         self.imei = json_data.get("imei")
         self.schedule_id = json_data.get("schedule_id")
         self.start_time = json_data.get("start_time")
         self.end_time = json_data.get("end_time")
-
         if json_data.get("frequency"):
             self.frequency = ScheduleFrequency(json_data.get("frequency"))
 
-    def to_json(self) -> dict:
-        return {
+    def to_json(self, field_filters=[]) -> dict:
+        result = {
             "imei": self.imei,
             "schedule_id": self.schedule_id,
-            "start_time": self.start_time,
-            "end_time": self.end_time,
+            "start_time": int(self.start_time) if self.start_time else None,
+            "end_time": int(self.end_time) if self.end_time else None,
             "frequency": self.frequency
         }
+        for field in field_filters:
+            result.pop(field, None)
+        return result
     
     def pretty_print(self) -> str:
         return f"Schedule ID: {self.schedule_id}, IMEI: {self.imei}, Start Time: {self.start_time}, End Time: {self.end_time}, Frequency: {self.frequency}"
     
     def _api_add(self) -> None:
         return self.client.add_schedules(
-            imei=self.imei,
-            data=self.to_json(),
+            data=self.to_json(field_filters=["schedule_id"]),
         )
 
     def _api_update(self) -> None:
         return self.client.update_schedules(
-            data=self.to_json(),
+            data=self.to_json(field_filters=["frequency"]),
         )
 
     def _api_delete(self) -> None:
         return self.client.delete_schedules(
-            data=self.to_json(),
+            data=self.to_json(field_filters=["start_time", "end_time", "frequency"]),
         )
     
 
@@ -124,7 +170,7 @@ class ScheduleManager:
         return cls(client, imei, data)
 
     def from_json(self, json_data: dict) -> None:
-        self.schedule_items = [ScheduleItem(item) for item in json_data]
+        self.schedule_items = [ScheduleItem(json_data=item) for item in json_data]
 
         if not self.imei and self.schedule_items:
             self.imei = self.schedule_items[0].imei
@@ -178,11 +224,16 @@ class ScheduleManager:
         except Exception as e:
             logging.error(f"Failed to delete schedule item: {e}")
 
+    def clear_schedule(self) -> None:
+        while self.schedule_items:
+            self.delete_schedule_item(item=self.schedule_items[0])
+
+
 
 
 if __name__ == "__main__":
     
-    logging.getLogger().setLevel(logging.DEBUG)
+    logging.getLogger().setLevel(logging.INFO)
 
     client = Client()
 
@@ -190,45 +241,74 @@ if __name__ == "__main__":
     # test_imei = "33355533355533"
     test_imei = "444666444666444"
 
-    ## Get the schedule manager
+    ## Get the schedules
+    logging.info(f"\n\n################ Getting the schedule for IMEI: {test_imei}")
     schedule_manager = ScheduleManager.get_schedule(client, test_imei)
     ## print out the schedule manager
     print(schedule_manager.pretty_print())
 
+    ## Clear all current schedules
+    logging.info(f"\n\n################ Clearing the schedule for IMEI: {test_imei}")
+    schedule_manager.clear_schedule()
+    ## Check that the schedule is empty
+    schedule_manager.pull()
+    ## print out the schedule manager
+    print(schedule_manager.pretty_print())
+    ## assert that the schedule is empty
+    assert not schedule_manager.schedule_items
+
     ## Add a schedule item
+    logging.info(f"\n\n################ Adding a schedule for IMEI: {test_imei}")
     new_item = ScheduleItem(
         imei=test_imei,
         start_time=datetime.now() + timedelta(days=1),
         end_time=datetime.now() + timedelta(days=1, hours=1),
         frequency=ScheduleFrequency.daily
     )
+    assert new_item.duration == 3600
     schedule_manager.add_schedule_item(new_item)
 
     ## Check that this new item is in the schedule manager
+    logging.info(f"\n\n################ Check the new schedule for IMEI: {test_imei}")
     schedule_manager.pull()
     ## print out the new schedule item
     print(schedule_manager.pretty_print())
-    ## assert that the new_item's schedule_id is in the schedule_manager
-    assert new_item.schedule_id in [item.schedule_id for item in schedule_manager.schedule_items]
+
+    ## assert that the new_item's schedule_id is in the schedule_manager, test this by checking that the new_items start_time is in the schedule_manager
+    newly_created_item = None
+    target_start_time = int(new_item.start_time)
+    for item in schedule_manager.schedule_items:
+        if item.start_time == target_start_time:
+            newly_created_item = item
+            break
+    else:
+        raise ValueError("New item not found in schedule manager")
+
     
     ## Update the new item
-    new_item.frequency = ScheduleFrequency.weekly
-    schedule_manager.update_schedule_item(new_item)
+    logging.info(f"\n\n################ Update the schedule for IMEI: {test_imei}")
+    assert newly_created_item.duration == 3600
+    newly_created_item.start_time = datetime.now() + timedelta(days=2)
+    assert newly_created_item.duration == 3600
+    # newly_created_item.end_time = datetime.now() + timedelta(days=2, hours=1)
+    schedule_manager.update_schedule_item(newly_created_item)
     ## Check that this new item is in the schedule manager
     schedule_manager.pull()
     ## print out the new schedule item
     print(schedule_manager.pretty_print())
     ## assert that the new_item's frequency is now weekly
-    resulting_item = schedule_manager.get_schedule_item(new_item.schedule_id)
-    assert resulting_item.frequency == ScheduleFrequency.weekly
+    resulting_item = schedule_manager.get_schedule_item(newly_created_item.schedule_id)
+    assert resulting_item.start_time == newly_created_item.start_time
+    assert resulting_item.end_time == newly_created_item.end_time
 
     ## Delete the new item
-    schedule_manager.delete_schedule_item(new_item)
+    logging.info(f"\n\n################ Delete the schedule for IMEI: {test_imei}")
+    schedule_manager.delete_schedule_item(resulting_item)
     ## Check that this new item is in the schedule manager
     schedule_manager.pull()
     ## print out the new schedule item
     print(schedule_manager.pretty_print())
     ## assert that the new_item's schedule_id is not in the schedule_manager
-    assert new_item.schedule_id not in [item.schedule_id for item in schedule_manager.schedule_items]
+    assert resulting_item.schedule_id not in [item.schedule_id for item in schedule_manager.schedule_items]
 
-    print("\n\n\n    All tests passed!")
+    logging.info("\n\n\n    All tests passed!")

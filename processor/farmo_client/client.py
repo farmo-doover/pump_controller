@@ -36,11 +36,6 @@ class Client:
             self.session = requests.Session()
             self.update_headers()
 
-            logging.debug(f"Client created with token {self.token} and host {self.host}")
-            logging.debug(f"Client has request timeout of {self.request_timeout} and retries of {self.request_retries}")
-            logging.debug(f"Base url is {self._construct_url()}")
-            logging.debug(f"Session headers are {self.session.headers}")
-
 
     def update_headers(self):
         self.session.headers.update({"X-Auth-Token": f"{self.token}"})
@@ -102,10 +97,10 @@ class Client:
         return self._request(Route("GET", "get_schedules/{}", imei))
     
     def add_schedules(self, data: dict):
-        return self._request(Route("POST", "add_schedules/{}"), json=data)
+        return self._request(Route("POST", "add_schedules"), json=data)
     
     def update_schedules(self, data: dict):
-        return self._request(Route("POST", "update_schedules/{}"), json=data)
+        return self._request(Route("POST", "update_schedules"), json=data)
     
     def delete_schedules(self, data: dict):
-        return self._request(Route("POST", "delete_schedules/{}"), json=data)
+        return self._request(Route("POST", "delete_schedules"), json=data)
