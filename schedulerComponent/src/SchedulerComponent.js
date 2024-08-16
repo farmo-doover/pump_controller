@@ -184,7 +184,7 @@ export default class RemoteComponent extends RemoteAccess {
             apiWrapper.post_channel_aggregate(
                 {
                     agent_id: agent_id,
-                    channel_name: 'pump_Schedules',
+                    channel_name: 'pump_schedules',
                 },
                 JSON.stringify(payload),  // Use JSON.stringify here to ensure proper JSON format
                 token.token,
@@ -327,7 +327,7 @@ export default class RemoteComponent extends RemoteAccess {
             const schedules = await window.dooverDataAPIWrapper.get_channel_aggregate(
                 {
                     agent_id: agent_id,
-                    channel_name: "pump_Schedules",
+                    channel_name: "pump_schedules",
                 },
                 token.token
             );
