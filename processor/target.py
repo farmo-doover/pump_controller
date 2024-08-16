@@ -3,6 +3,10 @@ from datetime import datetime, timezone, timedelta
 
 from pydoover.cloud import ProcessorBase
 
+from farmo_client.client import Client as FarmoClient
+from farmo_client.schedule import ScheduleManager as FarmoScheduleManager
+from farmo_client.schedule import ScheduleItem
+
 from ui import construct_ui
 
 
@@ -16,6 +20,8 @@ class target(ProcessorBase):
         
         self.significant_event_channel = self.api.create_channel("significantEvent", self.agent_id)
         # self.activity_log_channel = self.api.create_channel("activity_log", self.agent_id)
+
+        self.pump_schedules_channel = self.api.create_channel("pump_schedules", self.agent_id)
 
         # Construct the UI
         self._ui_elements = construct_ui(self)
@@ -32,6 +38,8 @@ class target(ProcessorBase):
             self.on_downlink()
         elif message_type == "UPLINK":
             self.on_uplink()
+        elif message_type == "SCHEDULE_UPDATE":
+            self.on_schedule_update()
 
 
     def on_deploy(self):
@@ -81,63 +89,35 @@ class target(ProcessorBase):
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
 
 
-    def assess_lower_warning(self, value, prev_value, min):
-        if value is not None and value < min:
-            if prev_value is not None and prev_value > min:
-                return True
-        return False
-    
-    def assess_upper_warning(self, value, prev_value, max):
-        if value is not None and value > max:
-            if prev_value is not None and prev_value < max:
-                return True
-        return False
 
-    ## This gets called before ui manager is constructed
-    def get_connection_period(self):
-        try:
-            sleep_time_hrs = self.ui_manager.get_interaction("sleepTime").current_value
-        except:
-            sleep_time_hrs = 4
+    def on_schedule_update(self):
 
-        return sleep_time_hrs * 60 * 60
+        schedule_aggregate = self.pump_schedules_channel.fetch_aggregate()
+        if schedule_aggregate is None:
+            logging.info("No schedule aggregate found - skipping processing")
+            return
+        
+        if len(schedule_aggregate) == 0:
+            logging.info("No schedule found - skipping processing")
+            return
+        
+        # Create the Farmo Client
+        imei = self.get_agent_config("IMEI")
+        farmo_client = FarmoClient()
+        schedule_manager = FarmoScheduleManager(farmo_client, imei)
 
-    def get_previous_level(self, key):
+        ## Clear the schedules
+        schedule_manager.clear_schedules()
 
-        if not isinstance(key, list):
-            keys = [key]
-        else:
-            keys = key
-
-        state_messages = self.ui_state_channel.fetch_messages()
-
-        ## Search through the last few messages to find the last battery level
-        if len(state_messages) < 3:
-            logging.info("Not enough data to get previous levels")
-            return None
-
-        ### The device published a new message,
-        # Then we just published a message to update rssi, snr, etc
-        # so we need the message one before that
-        prev_levels = {}
-        for k in keys:
-            i = 2
-            prev_levels[k] = None
-            while prev_levels[k] is None and i < 10 and i < len(state_messages):
-                prev_level = None
-                try:
-                    prev_state_payload = state_messages[i].fetch_payload()
-                    if not isinstance(prev_state_payload, dict):
-                        prev_state_payload = json.loads( prev_state_payload )
-                    prev_level = prev_state_payload['state']['children'][k]['currentValue']
-                    logging.info("Found previous level for " + str(k) + " of " + str(prev_level) + ", " + str(i) + " messages ago : " + str(state_messages[i].id))
-                except Exception as e:
-                    logging.info("Could not get previous level - " + str(k) + " from error: " + str(e))
-                    pass
-                prev_levels[k] = prev_level
-                i = i + 1
-
-            if prev_levels[k] is None:
-                logging.info("Could not get previous level - " + str(k))
-            
-        return prev_levels
+        ## for each 'schedule', iterate each 'time_slot' and add it
+        for schedule in schedule_aggregate:
+            for time_slot in schedule["timeslots"]:
+                
+                new_item = ScheduleItem(
+                    imei=imei,
+                    start_time=time_slot["start_time"],
+                    end_time=time_slot["end_time"],
+                    frequency=time_slot["frequency"],
+                )
+                schedule_manager.add_schedule_item(new_item)
+        

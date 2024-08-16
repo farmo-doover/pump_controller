@@ -59,6 +59,19 @@
                         "is_active" : true
                     }
                 ]
+            },
+            {
+                "name" : "on_schedule_update",
+                "processor_name" : "message_processor",
+                "task_config" : {
+                    "message_type": "SCHEDULE_UPDATE"
+                },
+                "subscriptions" : [
+                    {
+                        "channel_name" : "pump_schedules",
+                        "is_active" : true
+                    }
+                ]
             }
         ]
     },
