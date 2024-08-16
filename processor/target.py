@@ -121,3 +121,6 @@ class target(ProcessorBase):
                 )
                 schedule_manager.add_schedule_item(new_item)
         
+
+    def get_connection_period(self):
+        return 60 * 60 * 12 ## 12 hours
