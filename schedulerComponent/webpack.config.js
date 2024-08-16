@@ -4,7 +4,6 @@ const path = require('path');
 const ExternalTemplateRemotesPlugin = require('external-remotes-plugin');
 const ConcatenatePlugin = require('./ConcatPlugin');
 
-
 module.exports = {
   entry: './src/SchedulerComponent.js',
   mode: 'development',
@@ -15,7 +14,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, 'dist'),
     filename: 'main.js',
-    },
+  },
   module: {
     rules: [
       {
@@ -24,20 +23,28 @@ module.exports = {
         exclude: /node_modules/,
         options: {
           presets: [
-              "@babel/preset-env",
-           ["@babel/preset-react", {"runtime": "automatic"}]
-        ],
+            "@babel/preset-env",
+            ["@babel/preset-react", {"runtime": "automatic"}]
+          ],
         },
       },
       {
         test: /\.css$/i,
-        use: ['style-loader','css-loader'],
+        use: ['style-loader', 'css-loader'],
       },
       {
         test: /\.svg$/i,
         type: 'asset/resource',
       },
     ],
+  },
+  resolve: {
+    fallback: {
+      "fs": false,
+      "path": require.resolve("path-browserify"),
+      "os": require.resolve("os-browserify/browser"),
+      "net": false,
+    },
   },
   plugins: [
     new ModuleFederationPlugin({
@@ -49,19 +56,15 @@ module.exports = {
       exposes: {
         './SchedulerComponent': './src/SchedulerComponent',
       },
-      // adds react as shared module
-      // version is inferred from package.json
-      // there is no version check for the required version
-      // so it will always use the higher version found
       shared: {
         react: {
-          import: 'react', // the "react" package will be used a provided and fallback module
-          shareKey: 'react', // under this name the shared module will be placed in the share scope
-          shareScope: 'default', // share scope with this name will be used
-          singleton: true, // only a single version of the shared module is allowed
+          import: 'react',
+          shareKey: 'react',
+          shareScope: 'default',
+          singleton: true,
         },
         './node_modules/react-dom': {
-          singleton: true, // only a single version of the shared module is allowed
+          singleton: true,
         },
       },
     }),
@@ -73,9 +76,8 @@ module.exports = {
     }),
     new ExternalTemplateRemotesPlugin(),
 
-// new HtmlWebpackPlugin({
-// template: './public/index.html',
-// }),
-
-],
+    // new HtmlWebpackPlugin({
+    // template: './public/index.html',
+    // }),
+  ],
 };
