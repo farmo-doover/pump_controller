@@ -1,5 +1,5 @@
 import RemoteAccess from 'doover_home/RemoteAccess';
-import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, Box, InputAdornment, Grid, Typography } from '@mui/material';
+import { Button, Dialog, DialogActions, DialogContent, DialogTitle, TextField, FormControl, FormLabel, RadioGroup, FormControlLabel, Radio, Box, InputAdornment, Grid, Typography, ToggleButtonGroup, ToggleButton } from '@mui/material';
 import React, { Component } from 'react';
 import { LocalizationProvider } from '@mui/x-date-pickers';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -9,12 +9,33 @@ import { addDays, addWeeks, format } from 'date-fns';
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import EditIcon from '@mui/icons-material/Edit';
 
-const PAGE_SLOT_MAX = 15;
+
+const PAGE_SLOT_MAX = 10;
 
 class TimeSlot {
     constructor(startTime, duration) {
         this.startTime = startTime;
         this.duration = duration;
+    }
+}
+
+class Schedule {
+    constructor(name, frequency) {
+        this.name = name;
+        this.frequency = frequency;
+        this.timeSlots = [];
+    }
+
+    addTimeSlot(timeSlot) {
+        this.timeSlots.push(timeSlot);
+    }
+
+    removeTimeSlot(index) {
+        this.timeSlots.splice(index, 1);
+    }
+
+    isEmpty() {
+        return this.timeSlots.length === 0;
     }
 }
 
@@ -24,20 +45,29 @@ export default class RemoteComponent extends RemoteAccess {
         this.state = {
             open: false,
             editOpen: false,
+            deleteOpen: false,
+            clearAllOpen: false,
             editIndex: -1,
+            deleteIndex: -1,
+            editSchedule: null,
             startDate: new Date(),
             endDate: new Date(),
             duration: 1,
             frequency: 'once',
-            timeSlots: [],
+            scheduleName: '',
+            schedules: [],
             currentPage: 0,
             isPageInputActive: false,
-            pageInputValue: ''
+            pageInputValue: '',
+            sortedTimeSlots: [],
+            toggleView: 'Timeslots',
+            inSchedules: [],
         };
+        this.updateUiStates = this.updateUiStates.bind(this);
     }
 
     handleClickOpen = () => {
-        this.setState({ open: true });
+        this.setState({ open: true, scheduleName: '' });
     };
 
     handleClose = () => {
@@ -45,17 +75,34 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     handleEditOpen = (index) => {
-        const slot = this.state.timeSlots[index];
+        const slot = this.state.sortedTimeSlots[index];
         this.setState({
             editOpen: true,
             editIndex: index,
             startDate: slot.startTime,
-            duration: slot.duration
+            duration: slot.duration,
+            editSchedule: slot.scheduleName
         });
     };
 
     handleEditClose = () => {
         this.setState({ editOpen: false });
+    };
+
+    handleDeleteOpen = (index) => {
+        this.setState({ deleteOpen: true, deleteIndex: index });
+    };
+
+    handleDeleteClose = () => {
+        this.setState({ deleteOpen: false });
+    };
+
+    handleClearAllOpen = () => {
+        this.setState({ clearAllOpen: true });
+    };
+
+    handleClearAllClose = () => {
+        this.setState({ clearAllOpen: false });
     };
 
     handleDateChange = (date) => {
@@ -74,74 +121,151 @@ export default class RemoteComponent extends RemoteAccess {
         this.setState({ frequency: event.target.value });
     };
 
+    handleScheduleNameChange = (event) => {
+        this.setState({ scheduleName: event.target.value });
+    };
+
     handleSave = () => {
-        const { startDate, endDate, duration, frequency } = this.state;
-
+        const { startDate, endDate, duration, frequency, scheduleName } = this.state;
+        const name = frequency === 'once' ? 'Once' : scheduleName || 'Unnamed Schedule';
+        const newSchedule = new Schedule(name, frequency);
+    
+        let timeslots = [];
+    
         if (frequency === 'once') {
-            const newTimeSlot = new TimeSlot(startDate, duration);
-            this.setState((prevState) => ({
-                timeSlots: [...prevState.timeSlots, newTimeSlot],
-                open: false
-            }), this.sortTimeSlots);
+            const startEpoch = new Date(startDate).getTime() / 1000;
+            const endEpoch = startEpoch + duration * 3600;
+    
+            newSchedule.addTimeSlot(new TimeSlot(startDate, duration));
+            timeslots.push({
+                "start_time": startEpoch,
+                "end_time": endEpoch,
+                "frequency": frequency,
+                "schedule_id": 1
+            });
         } else {
-            const newTimeSlots = [];
             let currentDate = new Date(startDate);
-
+            let scheduleId = 1;
+    
             while (currentDate <= endDate) {
-                newTimeSlots.push(new TimeSlot(new Date(currentDate), duration));
+                const startEpoch = new Date(currentDate).getTime() / 1000;
+                const endEpoch = startEpoch + duration * 3600;
+    
+                newSchedule.addTimeSlot(new TimeSlot(new Date(currentDate), duration));
+                timeslots.push({
+                    "start_time": startEpoch,
+                    "end_time": endEpoch,
+                    "frequency": frequency,
+                    "schedule_id": scheduleId
+                });
+    
+                scheduleId++;
+    
                 if (frequency === 'daily') {
                     currentDate = addDays(currentDate, 1);
                 } else if (frequency === 'weekly') {
                     currentDate = addWeeks(currentDate, 1);
                 }
             }
+        }
+    
+        const payload = [{
+            "start_time": new Date(startDate).getTime() / 1000,
+            "end_time": new Date(endDate).getTime() / 1000,
+            "frequency": frequency,
+            "schedule_name": scheduleName,
+            "timeslots": timeslots
+        }];
+    
+        const apiWrapper = window.dooverDataAPIWrapper;
+        const agent_id = this.getUi().agent_key;
+    
+        apiWrapper.get_temp_token().then((token) => {
+            apiWrapper.post_channel_aggregate(
+                {
+                    agent_id: agent_id,
+                    channel_name: 'pump_Schedules',
+                },
+                JSON.stringify(payload),  // Use JSON.stringify here to ensure proper JSON format
+                token.token,
+            );
+        });
+    
+        this.setState((prevState) => ({
+            schedules: [...prevState.schedules, newSchedule],
+            open: false
+        }), this.sortSchedules);
+    };
+    
+    
 
-            this.setState((prevState) => ({
-                timeSlots: [...prevState.timeSlots, ...newTimeSlots],
-                open: false
-            }), this.sortTimeSlots);
+    handleEditSave = () => {
+        const { startDate, duration, editIndex, sortedTimeSlots } = this.state;
+        const { scheduleName } = sortedTimeSlots[editIndex];
+        const schedule = this.state.schedules.find(sch => sch.name === scheduleName);
+        if (schedule) {
+            const slotIndex = schedule.timeSlots.findIndex(slot => slot.startTime === sortedTimeSlots[editIndex].startTime);
+            schedule.timeSlots[slotIndex] = new TimeSlot(startDate, duration);
+            this.setState({
+                schedules: [...this.state.schedules],
+                editOpen: false
+            }, this.sortSchedules);
         }
     };
 
-    handleEditSave = () => {
-        const { startDate, duration, editIndex, timeSlots } = this.state;
-        const updatedTimeSlots = [...timeSlots];
-        updatedTimeSlots[editIndex] = new TimeSlot(startDate, duration);
-        this.setState({
-            timeSlots: updatedTimeSlots,
-            editOpen: false
-        }, this.sortTimeSlots);
+    handleDelete = () => {
+        const { deleteIndex, sortedTimeSlots } = this.state;
+        const { scheduleName, startTime } = sortedTimeSlots[deleteIndex];
+        const schedule = this.state.schedules.find(sch => sch.name === scheduleName);
+
+        if (schedule) {
+            const slotIndex = schedule.timeSlots.findIndex(slot => slot.startTime === startTime);
+            schedule.removeTimeSlot(slotIndex);
+
+            if (schedule.isEmpty()) {
+                this.setState((prevState) => ({
+                    schedules: prevState.schedules.filter(sch => sch.name !== scheduleName),
+                    deleteOpen: false
+                }), this.sortSchedules);
+            } else {
+                this.setState({
+                    schedules: [...this.state.schedules],
+                    deleteOpen: false
+                }, this.sortSchedules);
+            }
+        }
     };
 
-    handleDelete = (index) => {
-        this.setState((prevState) => ({
-            timeSlots: prevState.timeSlots.filter((_, i) => i !== index)
-        }));
-    };
-
-    handleClearSchedule = () => {
+    handleClearAll = () => {
         this.setState({
-            timeSlots: [],
-            currentPage: 0
+            schedules: [],
+            currentPage: 0,
+            sortedTimeSlots: [],
+            clearAllOpen: false
         });
     };
 
-    sortTimeSlots = () => {
-        this.setState((prevState) => ({
-            timeSlots: prevState.timeSlots.slice().sort((a, b) => a.startTime - b.startTime)
-        }));
+    sortSchedules = () => {
+        const allTimeSlots = this.state.schedules.flatMap(schedule => 
+            schedule.timeSlots.map(slot => ({
+                ...slot,
+                scheduleName: schedule.name
+            }))
+        );
+        allTimeSlots.sort((a, b) => a.startTime - b.startTime);
+
+        this.setState({ sortedTimeSlots: allTimeSlots });
     };
 
     formatDateTime = (date) => {
-        return format(date, 'eee dd MMM hh:mm aa');
-        // return format(date, 'dd/MM hh:mm aa');
+        return format(date, 'dd/M/yy h:mma');
     };
 
     getCurrentPageTimeSlots = () => {
-        const { timeSlots, currentPage } = this.state;
+        const { sortedTimeSlots, currentPage } = this.state;
         const startIndex = currentPage * PAGE_SLOT_MAX;
         const endIndex = startIndex + PAGE_SLOT_MAX;
-        return timeSlots.slice(startIndex, endIndex);
+        return sortedTimeSlots.slice(startIndex, endIndex);
     };
 
     handleNextPage = () => {
@@ -170,6 +294,7 @@ export default class RemoteComponent extends RemoteAccess {
             isPageInputActive: !prevState.isPageInputActive,
             pageInputValue: ''
         }));
+        console.logf("current state", this.state);
     };
 
     handlePageInputChange = (event) => {
@@ -177,8 +302,8 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     handleJumpToPage = () => {
-        const { pageInputValue, timeSlots } = this.state;
-        const totalPages = Math.ceil(timeSlots.length / PAGE_SLOT_MAX);
+        const { pageInputValue, sortedTimeSlots } = this.state;
+        const totalPages = Math.ceil(sortedTimeSlots.length / PAGE_SLOT_MAX);
         const pageNumber = parseInt(pageInputValue, 10);
         
         if (pageNumber >= 1 && pageNumber <= totalPages) {
@@ -195,24 +320,92 @@ export default class RemoteComponent extends RemoteAccess {
         }
     };
 
+    async updateUiStates() {
+        try {
+            let agent_id = this.getUi().agent_key;
+            const token = await window.dooverDataAPIWrapper.get_temp_token(); 
+            const schedules = await window.dooverDataAPIWrapper.get_channel_aggregate(
+                {
+                    agent_id: agent_id,
+                    channel_name: "pump_Schedules",
+                },
+                token.token
+            );
+            return schedules.aggregate.payload;
+        } catch (err) {
+            console.error('ERROR:', err);
+            this.setState({ loading: false });
+            return null;
+        }
+    }
+    
+
+    componentDidMount() {
+        this.updateUiStates()
+            .then((test) => {
+                console.log('test:', test);
+                
+                // Convert the test data back into the original structure
+                const schedules = test.map((scheduleData) => {
+                    const { start_time, end_time, frequency, schedule_name, timeslots } = scheduleData;
+    
+                    // Create a new Schedule object
+                    const schedule = new Schedule(schedule_name, frequency);
+    
+                    // Process each timeslot
+                    timeslots.forEach((timeslot) => {
+                        const { start_time: tsStartTime, end_time: tsEndTime, schedule_id } = timeslot;
+                        const duration = (tsEndTime - tsStartTime) / 3600; // Convert end_time back to duration in hours
+                        
+                        // Add the timeslot to the schedule
+                        schedule.addTimeSlot(new TimeSlot(new Date(tsStartTime * 1000), duration));
+                    });
+    
+                    return schedule;
+                });
+                console.log('schedules:', schedules);
+                // Update the state with the new schedules
+                this.setState({ schedules }, this.sortSchedules);
+            })
+            .catch((err) => {
+                console.error('ERROR:', err);
+            });
+    }
+    
+    
+
+
     render() {
-        const { currentPage, timeSlots, isPageInputActive, pageInputValue } = this.state;
-        const totalPages = Math.ceil(timeSlots.length / PAGE_SLOT_MAX);
+
+        console.log("state", this.state);
+
+        const { currentPage, isPageInputActive, pageInputValue, frequency, sortedTimeSlots, deleteOpen, clearAllOpen, toggleView } = this.state;
         const currentPageTimeSlots = this.getCurrentPageTimeSlots();
+        const totalPages = Math.ceil(sortedTimeSlots.length / PAGE_SLOT_MAX);
 
         return (
             <Box>
-                <Box display="flex" justifyContent="space-around" alignItems="center" position="relative" marginTop="10px" marginBottom="15px">
-                    <Button variant="contained" color="primary" onClick={this.handleClickOpen}>
-                        Add Schedule
+                <Box display="flex" justifyContent="space-between" alignItems="center" position="relative" >
+                    <Button variant="contained" color="primary" onClick={this.handleClickOpen} sx={{height:"50px", margin:"0px"}}>
+                        Create Schedule
                     </Button>
-                    {timeSlots.length > 0 && (
+                    <ToggleButtonGroup
+                        value={toggleView}
+                        exclusive
+                        onChange={(event, newView) => this.setState({ toggleView: newView || toggleView })}
+                          
+                        sx={{ height:"50px" }}
+                    >
+                        <ToggleButton value="Schedules" sx={{ textTransform: 'none' }}>Schedules</ToggleButton>
+                        <ToggleButton value="Timeslots" sx={{ textTransform: 'none' }}>Timeslots</ToggleButton>
+                    </ToggleButtonGroup>
+                    {sortedTimeSlots.length > 0 && (
                         <Button
                             variant="contained"
                             color="secondary"
-                            onClick={this.handleClearSchedule}
+                            onClick={this.handleClearAllOpen}
                             sx={{
-                                // position: 'absolute',
+                                height:"50px",
                                 right: 0,
                                 backgroundColor: '#F44336',
                                 color: '#FFFFFF',
@@ -265,19 +458,31 @@ export default class RemoteComponent extends RemoteAccess {
                                     <FormControlLabel value="weekly" control={<Radio />} label="Weekly" />
                                 </RadioGroup>
                             </FormControl>
-                            {this.state.frequency !== 'once' && (
-                                <FormControl margin="normal" sx={{ flex: '0 1 auto', marginLeft: '20px' }}>
-                                    <FormLabel component="legend" sx={{ color: '#000000' }}>Repeat Until</FormLabel>
-                                    <LocalizationProvider dateAdapter={AdapterDateFns}>
-                                        <DateTimePicker
-                                            value={this.state.endDate}
-                                            onChange={this.handleEndDateChange}
-                                            renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
-                                        />
-                                    </LocalizationProvider>
-                                </FormControl>
+                            {frequency !== 'once' && (
+                                <Box display="flex" alignItems="center" marginTop={2}>
+                                    <FormControl margin="normal" sx={{ flex: '0 1 auto', marginLeft: '20px' }}>
+                                        <FormLabel component="legend" sx={{ color: '#000000' }}>Repeat until:</FormLabel>
+                                        <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                            <DateTimePicker
+                                                value={this.state.endDate}
+                                                onChange={this.handleEndDateChange}
+                                                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                                            />
+                                        </LocalizationProvider>
+                                    </FormControl>
+                                </Box>
                             )}
                         </Box>
+                        {frequency !== 'once' && (
+                            <FormControl fullWidth margin="normal">
+                                <FormLabel component="legend" sx={{ color: '#000000' }}>Schedule Name</FormLabel>
+                                <TextField
+                                    value={this.state.scheduleName}
+                                    onChange={this.handleScheduleNameChange}
+                                    fullWidth
+                                />
+                            </FormControl>
+                        )}
                     </DialogContent>
                     <DialogActions>
                         <Button onClick={this.handleClose} color="primary">
@@ -325,30 +530,67 @@ export default class RemoteComponent extends RemoteAccess {
                         </Button>
                     </DialogActions>
                 </Dialog>
-                {timeSlots.length > 0 ? (
+                <Dialog
+                    open={deleteOpen}
+                    onClose={this.handleDeleteClose}
+                >
+                    <DialogTitle>Confirm Deletion</DialogTitle>
+                    <DialogContent>
+                        <Typography>Are you sure you want to delete this TimeSlot?</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.handleDeleteClose} color="primary">
+                            Cancel
+                        </Button>
+                        <Button onClick={this.handleDelete} color="secondary">
+                            Delete
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                <Dialog
+                    open={clearAllOpen}
+                    onClose={this.handleClearAllClose}
+                >
+                    <DialogTitle>Confirm Clear All</DialogTitle>
+                    <DialogContent>
+                        <Typography>Are you sure you want to clear all TimeSlots and Schedules?</Typography>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={this.handleClearAllClose} color="primary">
+                            Cancel
+                        </Button>
+                        <Button onClick={this.handleClearAll} color="secondary">
+                            Clear All
+                        </Button>
+                    </DialogActions>
+                </Dialog>
+                {currentPageTimeSlots.length > 0 ? (
                     <div>
                     <Grid container spacing={0.5} justifyContent="center" marginTop={2} padding="5px">
-                        <Grid item xs={6}>
-                            {/* <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Start Time</Typography> */}
+                        <Grid item xs={4}>
                             <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Start Time</Typography>
                         </Grid>
-                        <Grid item xs={3}>
-                            {/* <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Duration</Typography> */}
-                            <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Duration</Typography>
+                        <Grid item xs={4}>
+                            <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Schedule</Typography>
                         </Grid>
-                        <Grid item xs={3}>
-                            {/* <Typography variant="h6" align="center" sx={{ backgroundColor: '#000000', color: '#FFFFFF' }}>Action</Typography> */}
+                        <Grid item xs={2}>
+                            <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>hrs</Typography>
+                        </Grid>
+                        <Grid item xs={2}>
                             <Typography variant="h6" align="center" sx={{ backgroundColor: '#eaeff1', color: '#222', borderRadius: '5px' }}>Action</Typography>
                         </Grid>
                         {currentPageTimeSlots.map((slot, index) => (
                             <React.Fragment key={index}>
-                                <Grid item xs={6}>
+                                <Grid item xs={4}>
                                     <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
                                 </Grid>
-                                <Grid item xs={3}>
-                                    <Typography align="center">{slot.duration} hrs</Typography>
+                                <Grid item xs={4}>
+                                    <Typography align="center">{slot.scheduleName}</Typography>
                                 </Grid>
-                                <Grid item xs={3}>
+                                <Grid item xs={2}>
+                                    <Typography align="center">{slot.duration}</Typography>
+                                </Grid>
+                                <Grid item xs={2}>
                                     <Box display="flex" justifyContent="space-between">
                                         <Button
                                             variant="contained"
@@ -376,7 +618,7 @@ export default class RemoteComponent extends RemoteAccess {
                                                     backgroundColor: '#D32F2F'
                                                 }
                                             }}
-                                            onClick={() => this.handleDelete(index)}
+                                            onClick={() => this.handleDeleteOpen(index)}
                                         >
                                             <RemoveCircleIcon/>
                                         </Button>
@@ -386,7 +628,6 @@ export default class RemoteComponent extends RemoteAccess {
                         ))}
                     </Grid>
                     <Box display="flex" justifyContent="center" alignItems="center" marginTop={2}>
-                    
                         <Button
                             variant="contained"
                             onClick={this.handlePreviousPage}
