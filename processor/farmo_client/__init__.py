@@ -1,3 +1,3 @@
-from client import Client
-from schedule import ScheduleManager
-from schedule import ScheduleItem
+from farmo_client.client import Client
+from farmo_client.schedule import ScheduleManager
+from farmo_client.schedule import ScheduleItem
