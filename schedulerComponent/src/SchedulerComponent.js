@@ -72,6 +72,8 @@ export default class RemoteComponent extends RemoteAccess {
             inSchedules: [],
             editingSchedule: false,
             editFrequency: 'once',
+            startDateError: "",
+            endDateError: "",
         };
         this.updateUiStates = this.updateUiStates.bind(this);
     }
@@ -92,7 +94,7 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     handleClose = () => {
-        this.setState({ open: false });
+        this.setState({ open: false, startDateError: "", endDateError: ""  });
     };
 
     handleEditOpen = (index) => {
@@ -208,8 +210,22 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     handleSave = () => {
-        console.log("creating new schedule");
         const { startDate, endDate, duration, frequency, scheduleName } = this.state;
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    
+        if (startDate < twentyFourHoursAgo) {
+            this.setState({ startDateError: "Start date cannot be more than 24 hours in the past." });
+            return;
+        }
+    
+        if (frequency !== 'once' && endDate <= startDate) {
+            this.setState({ endDateError: "End date must be after the start date for recurring schedules." });
+            return;
+        }
+    
+        this.setState({ startDateError: "", endDateError: "" });
+    
         const name = frequency === 'once' ? 'Once' : scheduleName || 'Unnamed Schedule';
         const newSchedule = new Schedule(name, frequency, startDate, endDate, duration);
     
@@ -241,7 +257,6 @@ export default class RemoteComponent extends RemoteAccess {
         const oldFrequency = schedule.frequency;
     
         if (newFrequency === 'once') {
-            // For 'once' frequency, we keep one timeslot, preferring an edited one if it exists
             const editedSlot = schedule.timeSlots.find(slot => slot.edited === 1);
             if (editedSlot) {
                 updatedTimeslots = [new TimeSlot(editedSlot.startTime, editedSlot.duration, 1)];
@@ -256,14 +271,11 @@ export default class RemoteComponent extends RemoteAccess {
                 );
     
                 if (existingSlot && existingSlot.edited === 1) {
-                    // Keep edited timeslots as they are
                     updatedTimeslots.push(new TimeSlot(existingSlot.startTime, existingSlot.duration, 1));
                 } else {
-                    // Create new timeslot or update unedited ones
                     updatedTimeslots.push(new TimeSlot(new Date(currentTime), newDuration, 0));
                 }
     
-                // Move to next slot based on new frequency
                 if (newFrequency === 'daily') {
                     currentTime = addDays(currentTime, 1);
                 } else if (newFrequency === 'weekly') {
@@ -272,7 +284,6 @@ export default class RemoteComponent extends RemoteAccess {
             }
         }
     
-        // Add any edited timeslots that fall outside the new schedule range
         schedule.timeSlots.forEach(slot => {
             if (slot.edited === 1 && !updatedTimeslots.some(updatedSlot => 
                 updatedSlot.startTime.getTime() === slot.startTime.getTime()
@@ -281,7 +292,6 @@ export default class RemoteComponent extends RemoteAccess {
             }
         });
     
-        // Sort the timeslots by start time
         updatedTimeslots.sort((a, b) => a.startTime - b.startTime);
     
         return updatedTimeslots;
@@ -312,7 +322,6 @@ export default class RemoteComponent extends RemoteAccess {
                 });
             }
         } else {
-            // Logic for editing schedules
             const scheduleToEdit = sortedSchedules[editIndex];
             if (scheduleToEdit) {
                 this.setState(prevState => {
@@ -351,8 +360,6 @@ export default class RemoteComponent extends RemoteAccess {
     handleDelete = () => {
         const { deleteIndex, sortedTimeSlots, sortedSchedules, toggleView } = this.state;
     
-        console.log("State prior to deleting", this.state);
-    
         if (toggleView === 'Timeslots') {
             const { scheduleName, startTime } = sortedTimeSlots[deleteIndex];
             const scheduleIndex = this.state.schedules.findIndex(sch => sch.name === scheduleName);
@@ -386,8 +393,6 @@ export default class RemoteComponent extends RemoteAccess {
                 this.pushChanges();
             });
         }
-    
-        console.log("State after deleting", this.state);
     };
 
     handleClearAll = () => {
@@ -533,7 +538,6 @@ export default class RemoteComponent extends RemoteAccess {
                         duration
                     );
     
-                    // Process each timeslot
                     timeslots.forEach((timeslot) => {
                         const { start_time: tsStartTime, end_time: tsEndTime, edited } = timeslot;
                         const slotDuration = (tsEndTime - tsStartTime) / 3600;
@@ -570,8 +574,6 @@ export default class RemoteComponent extends RemoteAccess {
         }
 
         const totalPages = Math.ceil(sortedRows.length / PAGE_SLOT_MAX);
-
-        console.log("State", this.state);
 
 
         return (
@@ -620,6 +622,9 @@ export default class RemoteComponent extends RemoteAccess {
                                     renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
                                 />
                             </LocalizationProvider>
+                            {this.state.startDateError && (
+                                <Typography color="error">{this.state.startDateError}</Typography>
+                            )}
                         </FormControl>
                         <FormControl component="fieldset" fullWidth margin="normal">
                             <FormLabel component="legend" sx={{ color: '#000000' }}>Duration</FormLabel>
@@ -649,18 +654,19 @@ export default class RemoteComponent extends RemoteAccess {
                                 </RadioGroup>
                             </FormControl>
                             {frequency !== 'once' && (
-                                <Box display="flex" alignItems="center" marginTop={2}>
-                                    <FormControl margin="normal" sx={{ flex: '0 1 auto', marginLeft: '20px' }}>
-                                        <FormLabel component="legend" sx={{ color: '#000000' }}>Repeat until:</FormLabel>
-                                        <LocalizationProvider dateAdapter={AdapterDateFns}>
-                                            <DateTimePicker
-                                                value={this.state.endDate}
-                                                onChange={this.handleEndDateChange}
-                                                renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
-                                            />
-                                        </LocalizationProvider>
-                                    </FormControl>
-                                </Box>
+                                <FormControl fullWidth margin="normal">
+                                    <FormLabel component="legend" sx={{ color: '#000000' }}>Repeat until:</FormLabel>
+                                    <LocalizationProvider dateAdapter={AdapterDateFns}>
+                                        <DateTimePicker
+                                            value={this.state.endDate}
+                                            onChange={this.handleEndDateChange}
+                                            renderInput={(params) => <TextField {...params} fullWidth margin="normal" />}
+                                        />
+                                    </LocalizationProvider>
+                                    {this.state.endDateError && (
+                                        <Typography color="error">{this.state.endDateError}</Typography>
+                                    )}
+                                </FormControl>
                             )}
                         </Box>
                         {frequency !== 'once' && (
