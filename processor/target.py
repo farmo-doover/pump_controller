@@ -3,9 +3,9 @@ from datetime import datetime, timezone, timedelta
 
 from pydoover.cloud import ProcessorBase
 
-from farmo_client.client import Client as FarmoClient
-from farmo_client.schedule import ScheduleManager as FarmoScheduleManager
-from farmo_client.schedule import ScheduleItem
+from farmo_client import Client as FarmoClient
+from farmo_client import ScheduleManager as FarmoScheduleManager
+from farmo_client import ScheduleItem as FarmoScheduleItem
 
 from ui import construct_ui
 
@@ -113,7 +113,7 @@ class target(ProcessorBase):
         for schedule in schedule_aggregate:
             for time_slot in schedule["timeslots"]:
                 
-                new_item = ScheduleItem(
+                new_item = FarmoScheduleItem(
                     imei=imei,
                     start_time=time_slot["start_time"],
                     end_time=time_slot["end_time"],
@@ -121,3 +121,6 @@ class target(ProcessorBase):
                 )
                 schedule_manager.add_schedule_item(new_item)
         
+
+    def get_connection_period(self):
+        return 60 * 60 * 12 ## 12 hours

@@ -7,7 +7,7 @@ import enum
 import uuid
 from datetime import datetime, timedelta
 
-from client import Client
+from farmo_client.client import Client
 
 class ScheduleFrequency(str, enum.Enum):
     daily = "daily"
