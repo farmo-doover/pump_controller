@@ -730,7 +730,6 @@ export default class RemoteComponent extends RemoteAccess {
     componentDidMount() {
         this.updateUiStates()
             .then((payload) => {
-                console.log("payload",payload);
                 const scheduleColors = this.generateColors(payload.schedules.length);
                 const schedules = Array.isArray(payload.schedules) ? payload.schedules.map((scheduleData, index) => {
                     // Ensure scheduleData is an object and has necessary properties
