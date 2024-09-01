@@ -37,6 +37,7 @@ class Schedule {
         this.mode = mode;
         this.timeSlots = [];
         this.color = color;
+        this.edited = 0;
     }
 
     addTimeSlot(timeSlot) {
@@ -314,13 +315,11 @@ export default class RemoteComponent extends RemoteAccess {
                 const scheduleColors = this.generateColors(this.state.schedules.length);
                 const updatedSchedules = this.state.schedules.length > 0 ? this.state.schedules.map((schedule, index) => {
                     
-                    // Update the color in the state
                     schedule.color = scheduleColors[index];
                     schedule.timeSlots.forEach(slot => {
                         slot.color = slot.edited === 1 ? '#FFFFFF' : scheduleColors[index];
                     });
     
-                    // Prepare the payload excluding the color
                     return {
                         schedule_name: schedule.name,
                         frequency: schedule.frequency,
@@ -328,7 +327,7 @@ export default class RemoteComponent extends RemoteAccess {
                         end_time: new Date(schedule.endTime).getTime() / 1000,
                         duration: schedule.duration,
                         mode: schedule.mode,
-                        // color: scheduleColors[index], // Do not include color in the payload
+                        edited: schedule.edited,
                         timeslots: schedule.timeSlots.map(slot => {
                             return {
                                 start_time: new Date(slot.startTime).getTime() / 1000,
@@ -336,7 +335,6 @@ export default class RemoteComponent extends RemoteAccess {
                                 duration: slot.duration,
                                 mode: slot.mode,
                                 edited: slot.edited,
-                                // color: slot.color // Do not include color in the payload
                             };
                         })
                     };
@@ -488,7 +486,7 @@ export default class RemoteComponent extends RemoteAccess {
                                     ? new TimeSlot(new Date(startDate), duration, 1, modeObject)
                                     : slot
                             );
-                            return { ...schedule, timeSlots: updatedTimeSlots };
+                            return { ...schedule, timeSlots: updatedTimeSlots, edited: 1 };
                         }
                         return schedule;
                     });
@@ -1123,9 +1121,14 @@ export default class RemoteComponent extends RemoteAccess {
                                         </Grid>
                                         <Grid item xs={4} sx = {{ backgroundColor: slot.color}}>
                                             <Typography align="center">
-                                                {toggleView === 'Timeslots' && hasModes 
+                                                {
+                                                toggleView === 'Timeslots' 
+                                                    ? slot.scheduleName 
+                                                    : hasModes 
                                                     ? (slot.mode && slot.mode.type) || 'No Mode'
-                                                    : slot.name}
+                                                    : slot.name
+                                                }
+
                                             </Typography>
                                         </Grid>
                                         <Grid item xs={2} sx = {{ backgroundColor: slot.color}}>
