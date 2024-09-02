@@ -331,6 +331,7 @@ export default class RemoteComponent extends RemoteAccess {
                         timeslots: schedule.timeSlots.map(slot => {
                             console.log("slot duration check",slot.duration * 3600);
                             console.log("slot duration check but int",int(slot.duration * 3600));
+                            console.log("test");
                             return {
                                 start_time: new Date(slot.startTime).getTime() / 1000,
                                 end_time: new Date(slot.startTime).getTime() / 1000 + slot.duration * 3600,
