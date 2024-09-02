@@ -135,7 +135,8 @@ class CLI:
 
         if self.agent_query is not None:
             self.agent = self.resolve_agent_query(self.agent_query)
-            self.agent_id = self.api.agent_id = self.agent and self.agent.id
+            if self.agent is not None:
+                self.agent_id = self.api.agent_id = self.agent and self.agent.id
         else:
             self.agent = None
 
@@ -314,7 +315,7 @@ class CLI:
         Processor Name: {proc.name}
         """
         fmt += f"""
-        Aggregate: {channel.aggregate}
+        Aggregate: {json.dumps(channel.aggregate, indent=4)}
         """
         return fmt
 
@@ -330,6 +331,7 @@ class CLI:
         try:
             channel = self.api.get_channel(channel_name)
         except NotFound:
+            print(channel_name, self.agent_id)
             channel = self.api.get_channel_named(channel_name, self.agent_id)
 
         print(self.format_channel_info(channel))
@@ -365,6 +367,8 @@ class CLI:
             return
         print(self.format_channel_info(task))
 
+        agent = self.api.get_agent(self.agent_id)
+
         msg_obj = None
         if channel_name:
             channel = self.api.get_channel_named(channel_name, self.agent_id)
@@ -373,7 +377,7 @@ class CLI:
         task.invoke_locally(
             package_path,
             msg_obj,
-            {"deployment_config": {}}
+            {"deployment_config": agent.deployment_config}
         )
 
     @command(setup_api=True)

@@ -81,7 +81,14 @@ class Client:
             attempt_counter += 1
 
             log.debug(f"Making {route.method} request to {url} with kwargs {kwargs}")
-            resp = self.session.request(route.method, url, timeout=self.request_timeout, **kwargs)
+            
+            try:
+                resp = self.session.request(route.method, url, timeout=self.request_timeout, **kwargs)
+            except requests.exceptions.Timeout:
+                log.info(f"Request to {url} timed out.")
+                if attempt_counter > retries:
+                    raise HTTPException("Request timed out.")
+                continue
 
             if resp.status_code == 200:
                 ## if we get a 200, we're good to go
@@ -104,7 +111,7 @@ class Client:
         return data
 
     def _get_agent_raw(self, agent_id: str) -> dict[str, Any]:
-        return self.request(Route("GET", "/ch/v1/agent/{}", agent_id))
+        return self.request(Route("GET", "/ch/v1/agent/{}/", agent_id))
 
     def _get_agent_list_raw(self) -> list[dict[str, Any]]:
         return self.request(Route("GET", "/ch/v1/list_agents/"))
@@ -128,14 +135,14 @@ class Client:
             return Channel(client=self, data=data)
 
     def _get_channel_raw(self, channel_id: str) -> dict[str, Any]:
-        return self.request(Route("GET", "/ch/v1/channel/{}", channel_id))
+        return self.request(Route("GET", "/ch/v1/channel/{}/", channel_id))
 
     def get_channel(self, channel_id: str) -> Optional[T]:
         data = self._get_channel_raw(channel_id)
         return data and self._parse_channel(data)
 
     def _get_channel_named_raw(self, channel_name: str, agent_id: str) -> dict[str, Any]:
-        return self.request(Route("GET", "/ch/v1/agent/{}/{}", agent_id, channel_name))
+        return self.request(Route("GET", "/ch/v1/agent/{}/{}/", agent_id, channel_name))
 
     def get_channel_named(self, channel_name: str, agent_id: str) -> Optional[T]:
         data = self._get_channel_named_raw(channel_name, agent_id)
@@ -143,9 +150,9 @@ class Client:
 
     def get_channel_messages(self, channel_id: str, num_messages: Optional[int] = None) -> list[Message]:
         if num_messages:
-            data = self.request(Route("GET", "/ch/v1/channel/{}/messages/{}", channel_id, str(num_messages)))
+            data = self.request(Route("GET", "/ch/v1/channel/{}/messages/{}/", channel_id, str(num_messages)))
         else:
-            data = self.request(Route("GET", "/ch/v1/channel/{}/messages", channel_id))
+            data = self.request(Route("GET", "/ch/v1/channel/{}/messages/", channel_id))
 
         if not data:
             return []
@@ -153,7 +160,7 @@ class Client:
         return [Message(client=self, data=m, channel_id=channel_id) for m in data["messages"]]
 
     def _get_message_raw(self, channel_id: str, message_id: str) -> dict[str, Any]:
-        return self.request(Route("GET", "/ch/v1/channel/{}/message/{}", channel_id, message_id))
+        return self.request(Route("GET", "/ch/v1/channel/{}/message/{}/", channel_id, message_id))
 
     def get_message(self, channel_id: str, message_id: str) -> Optional[Message]:
         data = self._get_message_raw(channel_id, message_id)
@@ -228,13 +235,13 @@ class Client:
     def create_tunnel_endpoints(self, agent_id: str, endpoint_type: str, amount: int):
         to_return = []
         for i in range(amount):
-            res = self.request(Route("POST", "/ch/v1/agent/{}/ngrok_tunnels/{}", agent_id, endpoint_type))
+            res = self.request(Route("POST", "/ch/v1/agent/{}/ngrok_tunnels/{}/", agent_id, endpoint_type))
             if res and res.get("url"):
                 to_return.append(res["url"])
         return to_return
 
     def get_tunnel_endpoints(self, agent_id: str, endpoint_type: str):
-        return self.request(Route("GET", "/ch/v1/agent/{}/ngrok_tunnels/{}", agent_id, endpoint_type))
+        return self.request(Route("GET", "/ch/v1/agent/{}/ngrok_tunnels/{}/", agent_id, endpoint_type))
 
     def login(self):
         if not (self.username or self.password):

@@ -224,7 +224,7 @@ class ScheduleManager:
         except Exception as e:
             logging.error(f"Failed to delete schedule item: {e}")
 
-    def clear_schedule(self) -> None:
+    def clear_schedules(self) -> None:
         while self.schedule_items:
             self.delete_schedule_item(item=self.schedule_items[0])
 

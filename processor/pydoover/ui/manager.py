@@ -3,13 +3,14 @@ import enum
 import inspect
 import logging
 import time
+import json
 from datetime import datetime
 
 from typing import Union, Any, Optional, TypeVar, TYPE_CHECKING
 
 from .element import Element
 from .interaction import SlimCommand, Interaction, NotSet
-from .submodule import Container
+from .submodule import Container, NAME_VALIDATOR
 from .variable import Variable
 
 from ..cloud.api import Client
@@ -103,6 +104,8 @@ class UIManager:
             return False
 
         try:
+            if not isinstance(self.last_ui_state_wss_connections, dict):
+                self.last_ui_state_wss_connections = json.loads(self.last_ui_state_wss_connections)
             connections = self.last_ui_state_wss_connections["connections"]
             # The following isn't working currently as agent_id is None
             # for k in connections.keys():
@@ -111,7 +114,8 @@ class UIManager:
 
             # if there is more than one connection, then we are being observed
             return len(connections.keys()) > 1
-        except KeyError:
+        except Exception as e:
+            log.error(f"Error checking if being observed: {e}")
             return False
 
     def has_been_connected(self):
@@ -165,8 +169,12 @@ class UIManager:
                 command._handle_new_value(new_value)
 
     def _set_new_ui_cmds(self, payload: dict[str, Any]):
-        if not isinstance(payload, dict):
-            payload = {}
+        if isinstance(payload, str):
+            try:
+                payload = json.loads(payload)
+            except json.JSONDecodeError:
+                log.error(f"Failed to decode UI commands: {payload}")
+                payload = {}
 
         try:
             payload = payload["cmds"]
@@ -191,7 +199,14 @@ class UIManager:
         return payload
 
     def _add_interaction(self, interaction: Interaction):
-        self._interactions[interaction.name] = interaction
+        name = interaction.name.strip()
+        if not NAME_VALIDATOR.match(name):
+            raise RuntimeError(
+                f"Invalid name '{name}' for interaction '{interaction}'. "
+                f"Valid characters include letters, numbers, and underscores."
+            )
+
+        self._interactions[name] = interaction
         interaction._manager = self
 
     def _remove_interaction(self, interaction_name: str) -> None:
@@ -309,6 +324,7 @@ class UIManager:
             return self.client.publish_to_channel(channel_name, data, record_log=record_log, **kwargs)
 
     def pull(self):
+        print("pulling...")
         if isinstance(self.client, Client):
             ui_cmds = self.client.get_channel_named("ui_cmds", self.agent_id)
             ui_state = self.client.get_channel_named("ui_state", self.agent_id)

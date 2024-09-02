@@ -1,7 +1,11 @@
 import inspect
+import re
 from typing import Any, Optional
 
 from .element import Element
+
+
+NAME_VALIDATOR = re.compile(r"^[a-zA-Z0-9_]+$")
 
 
 class Container(Element):
@@ -77,7 +81,11 @@ class Container(Element):
             if not isinstance(c, Element):
                 continue
 
-            self._children[c.name] = c
+            name = c.name.strip()
+            if not NAME_VALIDATOR.match(name):
+                raise RuntimeError(f"Invalid name '{name}' for element '{c}'. Valid characters include letters, numbers, and underscores.")
+
+            self._children[name] = c
             c.parent = self
 
             if not c.position:

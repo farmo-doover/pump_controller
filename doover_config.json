@@ -68,7 +68,7 @@
                 },
                 "subscriptions" : [
                     {
-                        "channel_name" : "pump_schedules",
+                        "channel_name" : "schedules",
                         "is_active" : true
                     }
                 ]

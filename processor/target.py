@@ -1,7 +1,7 @@
 import logging, json, time
 from datetime import datetime, timezone, timedelta
 
-from pydoover.cloud import ProcessorBase
+from pydoover.cloud.processor import ProcessorBase
 
 from farmo_client import Client as FarmoClient
 from farmo_client import ScheduleManager as FarmoScheduleManager
@@ -9,6 +9,7 @@ from farmo_client import ScheduleItem as FarmoScheduleItem
 
 from ui import construct_ui
 
+import uuid
 
 class target(ProcessorBase):
 
@@ -21,7 +22,7 @@ class target(ProcessorBase):
         self.significant_event_channel = self.api.create_channel("significantEvent", self.agent_id)
         # self.activity_log_channel = self.api.create_channel("activity_log", self.agent_id)
 
-        self.pump_schedules_channel = self.api.create_channel("pump_schedules", self.agent_id)
+        self.pump_schedules_channel = self.api.create_channel("schedules", self.agent_id)
 
         # Construct the UI
         self._ui_elements = construct_ui(self)
@@ -92,35 +93,111 @@ class target(ProcessorBase):
 
     def on_schedule_update(self):
 
+        # farmo_client = FarmoClient()
+
+        # logging.info(f"Before add : {farmo_client.get_timeslots('333555333555333')}")
+
+        # test = {
+        #     "imei": "333555333555333",
+        #     "start_time": 1725096590,
+        #     "end_time": 1725100190,
+        #     "frequency": "daily",
+        #     "repeat_until": 1725834211,
+        #     "test": "test"
+        # }
+
+        #"repeat_until": 1725834211
+
+        # logging.info(f"Test: {farmo_client.add_schedules(test)}")
+
+        # logging.info(f"After add : {farmo_client.timeslots('333555333555333')}")
+
+
         schedule_aggregate = self.pump_schedules_channel.fetch_aggregate()
         if schedule_aggregate is None:
             logging.info("No schedule aggregate found - skipping processing")
             return
         
-        if len(schedule_aggregate) == 0:
-            logging.info("No schedule found - skipping processing")
+        if len(schedule_aggregate["schedules"]) == 0:
+            logging.info("No schedules found - skipping processing")
             return
-        
+
         # Create the Farmo Client
-        imei = self.get_agent_config("IMEI")
+        #imei = self.get_agent_config("IMEI")
+        imei = "333555333555333"
+        if not imei:
+            logging.error("IMEI not found in agent config")
+            return
         farmo_client = FarmoClient()
-        schedule_manager = FarmoScheduleManager(farmo_client, imei)
+        #schedule_manager = FarmoScheduleManager(farmo_client, imei)
 
-        ## Clear the schedules
-        schedule_manager.clear_schedules()
+        #schedule_manager.clear_schedules()
 
-        ## for each 'schedule', iterate each 'time_slot' and add it
-        for schedule in schedule_aggregate:
-            for time_slot in schedule["timeslots"]:
-                
-                new_item = FarmoScheduleItem(
-                    imei=imei,
-                    start_time=time_slot["start_time"],
-                    end_time=time_slot["end_time"],
-                    frequency=time_slot["frequency"],
-                )
-                schedule_manager.add_schedule_item(new_item)
+        payload = farmo_client.get_schedules(imei)
+        logging.info(f"Payload: {payload}")
+        for i in payload:
+            farmo_client.delete_schedule({
+                "imei":imei,
+                "schedule_id":i['schedule_id'],
+                })
         
+        current_time = int(time.time())
+
+        for schedule in schedule_aggregate['schedules']:
+                
+            # new_item = FarmoScheduleItem(
+            #     imei=imei,
+            #     start_time=schedule["start_time"],
+            #     end_time=schedule["start_time"] + (schedule["duration"] * 3600),
+            #     frequency=schedule["frequency"],
+            #     repeat_until=schedule["end_time"],
+            # )
+            # schedule_manager.add_schedule_item(new_item)
+
+            if schedule["start_time"] <= current_time + 30:
+                if schedule["frequency"] == "once":
+                    logging.info("shcedule is in the past and is a once off schedule - skipping") 
+                    continue
+                    
+                elif schedule["frequency"] == "daily":
+                    rawdiff = current_time + 30 - schedule["start_time"]
+                    incdiff = ((rawdiff // (24 * 3600)) + 1) * 24 * 3600
+                    start_time = schedule["start_time"] + incdiff
+
+                elif schedule["frequency"] == "weekly":
+                    rawdiff = current_time + 30 - schedule["start_time"]
+                    incdiff = ((rawdiff // (24 * 3600 * 7)) + 1) * 24 * 3600 * 7
+                    start_time = schedule['start_time'] + incdiff
+
+                if start_time >= schedule["end_time"]:
+                    continue
+
+                end_time = start_time + (schedule["duration"] * 3600)
+
+            else:
+                start_time = schedule["start_time"]
+                end_time = start_time + (schedule["duration"] * 3600)
+            new_item = {
+                "imei":imei,
+                "start_time":start_time,
+                "end_time":end_time,
+                "frequency":schedule["frequency"],
+                "repeat_until":schedule["end_time"],
+                "schedule_id":str(uuid.uuid4())
+            }
+            test = farmo_client.get_schedules(imei)
+            logging.info(f"Updated schedules: {test}")
+            test2 = farmo_client.get_timeslots(imei)
+
+            # logging.info(f"Page BREAK FOR EYES")
+
+            # schedule["edited"] == 1:
+            #     plainSlots = []
+            #     editSlots = []
+            #     for i in 
+
+            # logging.info(f"Timeslots: {farmo_client.get_timeslots(imei)}")
+            logging.info(f"Timeslots: {test2}")            
 
     def get_connection_period(self):
         return 60 * 60 * 12 ## 12 hours
