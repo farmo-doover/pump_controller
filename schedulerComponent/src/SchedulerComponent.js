@@ -329,6 +329,8 @@ export default class RemoteComponent extends RemoteAccess {
                         mode: schedule.mode,
                         edited: schedule.edited,
                         timeslots: schedule.timeSlots.map(slot => {
+                            console.log("slot duration check",slot.duration * 3600);
+                            console.log("slot duration check but int",int(slot.duration * 3600));
                             return {
                                 start_time: new Date(slot.startTime).getTime() / 1000,
                                 end_time: new Date(slot.startTime).getTime() / 1000 + slot.duration * 3600,
@@ -851,7 +853,7 @@ export default class RemoteComponent extends RemoteAccess {
 
     render() {
 
-        console.log("state",this.state);
+        // console.log("state",this.state);
 
         const { currentPage, isPageInputActive, pageInputValue, frequency, sortedTimeSlots, sortedSchedules, deleteOpen, clearAllOpen, toggleView, mainParams, hasModes } = this.state;
         let currentPageSlots;
@@ -1114,7 +1116,7 @@ export default class RemoteComponent extends RemoteAccess {
                             </Grid>
                             {currentPageSlots.length > 0 ? (
                                 currentPageSlots.map((slot, index) => (
-                                    console.log("slot",slot),
+                                    // console.log("slot",slot),
                                     <React.Fragment key={index}>
                                         <Grid item xs={4} sx = {{ backgroundColor: slot.color}}>
                                             <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
