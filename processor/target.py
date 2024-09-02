@@ -143,6 +143,8 @@ class target(ProcessorBase):
         
         current_time = int(time.time())
 
+        logging.info(f"schedules to add from UI: {schedule_aggregate['schedules']}")
+
         for schedule in schedule_aggregate['schedules']:
                 
             # new_item = FarmoScheduleItem(
@@ -185,9 +187,13 @@ class target(ProcessorBase):
                 "repeat_until":schedule["end_time"],
                 "schedule_id":str(uuid.uuid4())
             }
+            farmo_client.add_schedules(new_item)
+
             test = farmo_client.get_schedules(imei)
             logging.info(f"Updated schedules: {test}")
             test2 = farmo_client.get_timeslots(imei)
+
+             
 
             # logging.info(f"Page BREAK FOR EYES")
 
