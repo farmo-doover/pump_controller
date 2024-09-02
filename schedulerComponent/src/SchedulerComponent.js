@@ -839,7 +839,7 @@ export default class RemoteComponent extends RemoteAccess {
                                     onChange={(_, value) => this.handleParamChange(param.name, value)}
                                     min={param.min}
                                     max={param.max}
-                                    step={0.01}
+                                    step={0.05}
                                     valueLabelDisplay="on"
                                 />
                             </Box>
