@@ -1123,13 +1123,12 @@ export default class RemoteComponent extends RemoteAccess {
                                         <Grid item xs={4} sx = {{ backgroundColor: slot.color}}>
                                             <Typography align="center">
                                                 {
-                                                toggleView === 'Timeslots' 
-                                                    ? slot.scheduleName 
-                                                    : hasModes 
-                                                    ? (slot.mode && slot.mode.type) || 'No Mode'
-                                                    : slot.name
+                                                    toggleView === 'Timeslots'
+                                                        ? hasModes
+                                                            ? (slot.mode && slot.mode.type) || 'No Mode'
+                                                            : slot.scheduleName
+                                                        : slot.name
                                                 }
-
                                             </Typography>
                                         </Grid>
                                         <Grid item xs={2} sx = {{ backgroundColor: slot.color}}>
