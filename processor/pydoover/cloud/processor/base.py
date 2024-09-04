@@ -139,6 +139,8 @@ class ProcessorBase:
             pass
 
     def get_agent_config(self, filter_key: str = None):
+        if not self.deployment_config:
+            return None
         if filter_key:
             return self.deployment_config.get(filter_key)
         return self.deployment_config

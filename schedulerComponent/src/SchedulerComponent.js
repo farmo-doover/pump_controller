@@ -14,7 +14,7 @@ import { addDays, addWeeks, eachDayOfInterval, eachWeekOfInterval, format } from
 import RemoveCircleIcon from '@mui/icons-material/RemoveCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import { color } from '@mui/system';
-
+// code is as follows:
 const PAGE_SLOT_MAX = 10;
 
 class TimeSlot {
@@ -93,6 +93,7 @@ export default class RemoteComponent extends RemoteAccess {
             editFrequency: 'once',
             startDateError: "",
             endDateError: "",
+            editError: "",
             hasModes: false,
         };
         this.updateUiStates = this.updateUiStates.bind(this);
@@ -174,7 +175,7 @@ export default class RemoteComponent extends RemoteAccess {
     };
 
     handleEditClose = () => {
-        this.setState({ editOpen: false });
+        this.setState({ editOpen: false, editError: "" });
     };
 
     handleDeleteOpen = (index) => {
@@ -329,7 +330,7 @@ export default class RemoteComponent extends RemoteAccess {
                         mode: schedule.mode,
                         edited: schedule.edited,
                         timeslots: schedule.timeSlots.map(slot => {
-                            console.log("slot",slot);
+                            //console.log("slot",slot);
                             return {
                                 start_time: new Date(slot.startTime).getTime() / 1000,
                                 end_time: new Date(slot.startTime).getTime() / 1000 + slot.duration * 3600,
@@ -384,6 +385,9 @@ export default class RemoteComponent extends RemoteAccess {
         const now = new Date();
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
+        console.log("state check",this.state);
+        // console.log("checking how we're going to retrieve datetime",this.state.sortedTimeSlots[0].startTime.getTime());
+
         if (startDate < twentyFourHoursAgo) {
             this.setState({ startDateError: "Start date cannot be more than 24 hours in the past." });
             return;
@@ -396,40 +400,167 @@ export default class RemoteComponent extends RemoteAccess {
     
         this.setState({ startDateError: "", endDateError: "" });
     
-        const name = frequency === 'once' ? 'Once' : scheduleName || 'Unnamed Schedule';
-        const modeObject = this.formatModeObject();
-        const newSchedule = new Schedule(name, frequency, startDate, endDate, duration, modeObject);
-    
         if (frequency === 'once') {
-            newSchedule.addTimeSlot(new TimeSlot(startDate, duration, 0, modeObject));
+            const checkStart = startDate.getTime();
+            const checkEnd = checkStart + duration * 3600 * 1000;
+            let valStart;
+            let valEnd;
+            let collide = false;
+            for (const [indexSched,valSched] of this.state.schedules.entries()) {
+                for (const [indexSlot,valSlot] of valSched.timeSlots.entries()) {
+                    valStart = valSlot.startTime.getTime();
+                    valEnd = valStart + valSlot.duration * 3600 * 1000;
+                    if ((checkStart <= valStart && checkEnd >= valStart)
+                        || (checkStart < valEnd && checkEnd >= valEnd)
+                    ) {                 
+                        this.setState(prevState => {
+                            const updatedSchedules = [...prevState.schedules];
+                            const updatedTimeSlots = [...updatedSchedules[indexSched].timeSlots];
+        
+                            updatedTimeSlots[indexSlot] = {
+                                ...updatedTimeSlots[indexSlot],
+                                startTime: new Date(Math.min(checkStart,valStart)),
+                                endTime: new Date(Math.max(checkEnd,valEnd)),
+                                duration: (Math.max(checkEnd,valEnd) - Math.min(checkStart,valStart)) / 3600 / 1000,
+                                edited: 1,
+                            };
+        
+                            updatedSchedules[indexSched] = {
+                                ...updatedSchedules[indexSched],
+                                timeSlots: updatedTimeSlots,
+                            };
+        
+                            return {
+                                ...prevState,
+                                schedules: updatedSchedules,
+                            };
+                        });
+                        this.pushChanges();
+                        collide = true;
+                        break; 
+                    }
+                } 
+            }
+            if (collide === false) {
+                const modeObject = this.formatModeObject();
+                const newSchedule = new Schedule('Once', frequency, startDate, endDate, duration, modeObject);
+                newSchedule.addTimeSlot(new TimeSlot(startDate, duration, 0, modeObject));
+                const scheduleColor = this.generateColors(schedules.length + 1).pop();
+                newSchedule.color = scheduleColor;
+                newSchedule.timeSlots.forEach(slot => {
+                    slot.color = scheduleColor;
+                });
+            
+                this.setState((prevState) => ({
+                    schedules: [...prevState.schedules, newSchedule],
+                    open: false,
+                    selectedMode: '',
+                    modeParams: {}
+                }), () => {
+                    this.sortSchedules();
+                    this.pushChanges();
+                });
+            
+                } else {
+                    this.setState({
+                        open: false,
+                        selectedMode: '',
+                        modeParams: {}
+                    }, () => {
+                        this.sortSchedules();
+                        this.pushChanges();
+                    });
+            
+                }
+
         } else {
             let currentDate = new Date(startDate);
+            let schedCreated = false;
+            let newSchedule;
+            let modeObject;
+            
             while (currentDate <= endDate) {
-                newSchedule.addTimeSlot(new TimeSlot(new Date(currentDate), duration, 0, modeObject));
+                let valStart;
+                let valEnd;
+                let collide = false;
+                let checkStart = currentDate.getTime();
+                let checkEnd = checkStart + duration * 3600 * 1000;
+                middleLoop:
+                for (const [indexSched,valSched] of this.state.schedules.entries()) {
+                    for (const [indexSlot,valSlot] of valSched.timeSlots.entries()) {
+                        valStart = valSlot.startTime.getTime();
+                        valEnd = valStart + valSlot.duration * 3600 * 1000;
+                        if ((checkStart <= valStart && checkEnd >= valStart)
+                            || (checkStart < valEnd && checkEnd >= valEnd)
+                        ) {                 
+                            this.setState(prevState => {
+                                const updatedSchedules = [...prevState.schedules];
+                                const updatedTimeSlots = [...updatedSchedules[indexSched].timeSlots];
+            
+                                updatedTimeSlots[indexSlot] = {
+                                    ...updatedTimeSlots[indexSlot],
+                                    startTime: new Date(Math.min(checkStart,valStart)),
+                                    endTime: new Date(Math.max(checkEnd,valEnd)),
+                                    duration: (Math.max(checkEnd,valEnd) - Math.min(checkStart,valStart)) / 3600 / 1000,
+                                };
+            
+                                updatedSchedules[indexSched] = {
+                                    ...updatedSchedules[indexSched],
+                                    timeSlots: updatedTimeSlots,
+                                };
+            
+                                return {
+                                    ...prevState,
+                                    schedules: updatedSchedules,
+                                };
+                            });
+                            this.pushChanges();
+                            collide = true;
+                            break middleLoop; 
+                        } 
+                    }
+                }
+                if (collide === false) {
+                    if (!schedCreated) {
+                        modeObject = this.formatModeObject();
+                        newSchedule = new Schedule(scheduleName, frequency, startDate, endDate, duration, modeObject);
+                        schedCreated = true;
+                    }
+                    newSchedule.addTimeSlot(new TimeSlot(new Date(currentDate), duration, 0, modeObject));
+                    schedCreated = true;
+                }
                 if (frequency === 'daily') {
                     currentDate = addDays(currentDate, 1);
                 } else if (frequency === 'weekly') {
                     currentDate = addWeeks(currentDate, 1);
                 }
             }
+            if (schedCreated) {
+                const scheduleColor = this.generateColors(schedules.length + 1).pop();
+                newSchedule.color = scheduleColor;
+                newSchedule.timeSlots.forEach(slot => {
+                    slot.color = scheduleColor;
+                });
+                this.setState((prevState) => ({
+                    schedules: [...prevState.schedules, newSchedule],
+                    open: false,
+                    selectedMode: '',
+                    modeParams: {}
+                }), () => {
+                    this.sortSchedules();
+                    this.pushChanges();
+                });
+            } else {
+                this.setState({
+                    open: false,
+                    selectedMode: '',
+                    modeParams: {}
+                }, () => {
+                    this.sortSchedules();
+                    this.pushChanges();
+                });
+            }
         }
-    
-        // Generate a color for the new schedule immediately
-        const scheduleColor = this.generateColors(schedules.length + 1).pop();
-        newSchedule.color = scheduleColor;
-        newSchedule.timeSlots.forEach(slot => {
-            slot.color = scheduleColor;
-        });
-    
-        this.setState((prevState) => ({
-            schedules: [...prevState.schedules, newSchedule],
-            open: false,
-            selectedMode: '',
-            modeParams: {}
-        }), () => {
-            this.sortSchedules();
-            this.pushChanges();
-        });
     };
 
 
@@ -473,10 +604,37 @@ export default class RemoteComponent extends RemoteAccess {
 
 
     handleEditSave = () => {
+        // if (frequency !== 'once' && endDate <= startDate) {
+        //     this.setState({ editError: "editing in this way would cause a conflict. Please try again" });
+        //     return;
+        // }
+    
+        // this.setState({ editError: ""});
+
         const { startDate, endDate, duration, editIndex, sortedTimeSlots, sortedSchedules, toggleView, editFrequency, selectedMode, modeParams, editScheduleName } = this.state;
         const modeObject = this.formatModeObject();
 
         if (toggleView === 'Timeslots') {
+
+            const checkStart = startDate.getTime();
+            const checkEnd = checkStart + duration * 3600 * 1000;
+            let valStart;
+            let valEnd;
+            for (const valSched of this.state.schedules) {
+                for (const valSlot of valSched.timeSlots) {
+                    valStart = valSlot.startTime.getTime();
+                    valEnd = valStart + valSlot.duration * 3600 * 1000;
+                    if ((checkStart <= valStart && checkEnd >= valStart)
+                        || (checkStart < valEnd && checkEnd >= valEnd)
+                    ) {
+                        this.setState({ editError: "editing in this way would cause a conflict. Please try again" });
+                        return; 
+                    }
+                }
+            }
+
+            this.setState({ editError: ""})
+
             const timeSlot = sortedTimeSlots[editIndex];
             if (timeSlot) {
                 this.setState(prevState => {
@@ -498,6 +656,47 @@ export default class RemoteComponent extends RemoteAccess {
                 });
             }
         } else {
+
+            let currentDate = new Date(startDate);
+            let modeObject;
+            
+
+            console.log("descending into perrilous while loop");
+            while (currentDate <= endDate) {
+                let valStart;
+                let valEnd;
+                let checkStart = currentDate.getTime();
+                let checkEnd = checkStart + duration * 3600 * 1000;
+                for (const valSched of this.state.schedules) {
+                    if (valSched.name === editScheduleName) {
+                        continue;
+                    }
+                    for (const valSlot of valSched.timeSlots) {
+                        valStart = valSlot.startTime.getTime();
+                        valEnd = valStart + valSlot.duration * 3600 * 1000;
+                        if ((checkStart <= valStart && checkEnd >= valStart)
+                            || (checkStart < valEnd && checkEnd >= valEnd)
+                        ) {
+                            console.log("valStart",valStart);
+                            console.log("valEnd",valEnd);
+                            console.log("checkStart",checkStart);
+                            console.log("checkEnd",checkEnd);
+                            console.log("currentDate",currentDate);
+                            console.log("endDate",endDate);
+                            this.setState({ editError: "editing in this way would cause a conflict. Please try again" });
+                            return;
+                        }
+                    }
+                }
+                if (editFrequency === 'daily') {
+                    currentDate = addDays(currentDate, 1);
+                } else if (editFrequency === 'weekly') {
+                    currentDate = addWeeks(currentDate, 1);
+                }
+            }
+
+            this.setState({ editError: ""})
+
             const scheduleToEdit = sortedSchedules[editIndex];
             if (scheduleToEdit) {
                 this.setState(prevState => {
@@ -852,7 +1051,7 @@ export default class RemoteComponent extends RemoteAccess {
 
     render() {
 
-        console.log("state",this.state);
+        //console.log("state",this.state);
 
         const { currentPage, isPageInputActive, pageInputValue, frequency, sortedTimeSlots, sortedSchedules, deleteOpen, clearAllOpen, toggleView, mainParams, hasModes } = this.state;
         let currentPageSlots;
@@ -1049,6 +1248,9 @@ export default class RemoteComponent extends RemoteAccess {
                         </FormControl>
                         {this.renderModeSelection()}
                     </DialogContent>
+                    {this.state.editError && (
+                                <Typography color="error">{this.state.editError}</Typography>
+                            )}
                     <DialogActions>
                         <Button onClick={this.handleEditClose} color="primary">
                             Cancel
@@ -1115,7 +1317,7 @@ export default class RemoteComponent extends RemoteAccess {
                             </Grid>
                             {currentPageSlots.length > 0 ? (
                                 currentPageSlots.map((slot, index) => (
-                                    console.log("slot",slot),
+                                    //console.log("slot",slot),
                                     <React.Fragment key={index}>
                                         <Grid item xs={4} sx = {{ backgroundColor: slot.color}}>
                                             <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>

@@ -1,16 +1,23 @@
-import json, time
+import json, time, csv
+from datetime import datetime
 from typing import Any
 
 
 class Message:
+
     def __init__(self, client, data, channel_id=None, agent_id=None, channel_name=None):
+        
+        self.id = None
+        self.timestamp = None
+
         self.client = client
         self.channel_id = channel_id
         self.agent_id = agent_id
         self.channel_name = channel_name
         self._payload = None
 
-        self._from_data(data)
+        if data is not None:
+            self._from_data(data)
 
     def __repr__(self):
         if self._payload is not None:
@@ -29,6 +36,16 @@ class Message:
 
         self._payload = data.get("payload")
 
+    def to_dict(self):
+        return {
+            "message": self.id,
+            "agent": self.agent_id,
+            "timestamp": self.timestamp,
+            "channel": self.channel_id,
+            "channel_name": self.channel_name,
+            "payload": self._payload
+        }
+
     def update(self):
         data = self.client._get_message_raw(self.channel_id, self.id)
         self._from_data(data)
@@ -43,3 +60,46 @@ class Message:
 
     def get_age(self):
         return time.time() - self.timestamp
+
+
+    @staticmethod
+    def from_csv_export(client, csv_file_path):
+        
+        messages = []
+
+        # Open and read the CSV file using the csv module
+        with open(csv_file_path, 'r', newline='') as file:
+            reader = csv.DictReader(file)  # Use DictReader to handle headers
+
+            for row in reader:
+                # Extract data from the row
+                key = row['Key']
+                timestamp = row['Timestamp (UTC)']
+                channel_name = row['Channel']
+                channel_id = row['Channel ID']
+                agent_name = row['Agent']
+                agent_id = row['Agent ID']
+                payload = row['Payload']
+
+                # Convert timestamp to UTC epoch timestamp
+                timestamp = datetime.fromisoformat(timestamp).timestamp()
+
+                # Create a Message instance
+                message = Message(
+                    client,
+                    data=None,
+                    channel_id=channel_id,
+                    agent_id=agent_id,
+                    channel_name=channel_name
+                )
+
+                message.id = key
+                message.timestamp = timestamp
+                message._payload = json.loads(payload)
+
+                messages.append(message)
+
+        # Sort the messages by timestamp
+        messages.sort(key=lambda x: x.timestamp)
+
+        return messages

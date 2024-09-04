@@ -24,7 +24,7 @@ class Container(Element):
         if auto_add_elements:
             self.add_children(*[e for name, e in inspect.getmembers(self, predicate=lambda e: isinstance(e, Element))])
 
-        self._max_position = 0
+        self._max_position = 101
 
     def _register_interactions(self):
         for name, func in inspect.getmembers(self, predicate=lambda f: inspect.ismethod(f) and hasattr(f, "_ui_type")):
@@ -41,8 +41,8 @@ class Container(Element):
         result["children"] = {name: c.to_dict() for name, c in self._children.items()}
         return result
 
-    def get_diff(self, other: dict[str, Any], remove: bool = True) -> Optional[dict[str, Any]]:
-        res = super().get_diff(other, remove=remove) or {}
+    def get_diff(self, other: dict[str, Any], remove: bool = True, retain_fields: Optional[list] = []) -> Optional[dict[str, Any]]:
+        res = super().get_diff(other, remove=remove, retain_fields=retain_fields) or {}
         # this will account for all the "normal" attributes, but not the children, since dicts aren't hashable
         # (ie. you can't do dict1 == dict2 to see if they're equal)
         other_children = other.get("children", {})
@@ -54,7 +54,7 @@ class Container(Element):
 
         for name, child in this_children.items():
             try:
-                diff = child.get_diff(other_children[name], remove=remove)
+                diff = child.get_diff(other_children[name], remove=remove, retain_fields=retain_fields)
                 if diff is not None:
                     children_diff[name] = diff
             except KeyError:
@@ -77,6 +77,10 @@ class Container(Element):
         self.add_children(*children)
 
     def add_children(self, *children: Element):
+
+        if not hasattr(self, "_max_position"):
+            self._max_position = 101
+
         for c in children:
             if not isinstance(c, Element):
                 continue

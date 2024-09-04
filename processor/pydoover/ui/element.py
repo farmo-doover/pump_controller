@@ -21,7 +21,7 @@ class Element:
         graphic: str = None,  # not sure of type
         layout: str = None,  # not sure of type
         component_url: str = None,  # not sure of type
-        position: int = 100,
+        position: Optional[int] = None, # 100,
         **kwargs
     ):
         self.name = name
@@ -54,12 +54,12 @@ class Element:
         # filter out any null values
         return {k: v for k, v in to_return.items() if v is not None}
 
-    def get_diff(self, other: dict[str, Any], remove: bool = True) -> Optional[dict[str, Any]]:
+    def get_diff(self, other: dict[str, Any], remove: bool = True, retain_fields: Optional[list] = []) -> Optional[dict[str, Any]]:
         this = self.to_dict()
-        if this == other:
-            return None
+        # if this == other:
+        #     return None
 
-        result = {k: v for k, v in this.items() if other.get(k) != v}
+        result = {k: v for k, v in this.items() if other.get(k) != v or k in retain_fields}
         if remove:
             result.update(**{k: None for k in other if k not in this})  # to_remove
         if len(result) == 0:

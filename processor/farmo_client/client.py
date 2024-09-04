@@ -107,3 +107,6 @@ class Client:
     
     def delete_schedule(self, data: dict):
         return self._request(Route("POST", "delete_schedule"), json=data)
+
+    def add_schedules_manual(self, data: dict):
+        return self._request(Route("POST", "add_schedules_manual"), json=data)

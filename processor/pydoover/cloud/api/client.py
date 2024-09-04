@@ -87,16 +87,16 @@ class Client:
             except requests.exceptions.Timeout:
                 log.info(f"Request to {url} timed out.")
                 if attempt_counter > retries:
-                    raise HTTPException("Request timed out.")
+                    raise HTTPException(f"Request timed out. {url}")
                 continue
 
             if resp.status_code == 200:
                 ## if we get a 200, we're good to go
                 break
             elif resp.status_code == 403:
-                raise Forbidden("Access denied.")
+                raise Forbidden(f"Access denied. {url}")
             elif resp.status_code == 404:
-                raise NotFound("Resource not found.")
+                raise NotFound(f"Resource not found. {url}")
             elif resp.status_code != 200:
                 log.info(f"Failed to make request to {url}. Status code: {resp.status_code}, message: {resp.text}")
                 if attempt_counter > retries:
@@ -160,7 +160,7 @@ class Client:
         return [Message(client=self, data=m, channel_id=channel_id) for m in data["messages"]]
 
     def _get_message_raw(self, channel_id: str, message_id: str) -> dict[str, Any]:
-        return self.request(Route("GET", "/ch/v1/channel/{}/message/{}/", channel_id, message_id))
+        return self.request(Route("GET", "/ch/v1/channel/{}/message/{}", channel_id, message_id))
 
     def get_message(self, channel_id: str, message_id: str) -> Optional[Message]:
         data = self._get_message_raw(channel_id, message_id)
@@ -202,8 +202,8 @@ class Client:
     def publish_to_channel(self, channel_id: str, data: Any, save_log: bool = True, log_aggregate: bool = False, override_aggregate: bool = False, timestamp: Optional[datetime] = None):
         # basically we're assuming there's only 2 types of data - dict or string...
         post_data = {"msg": data}
-        if save_log:
-            post_data["record_log"] = save_log
+        
+        post_data["record_log"] = save_log
         if log_aggregate:
             post_data["log_aggregate"] = True
         if override_aggregate:
@@ -218,8 +218,8 @@ class Client:
 
     def publish_to_channel_name(self, agent_id: str, channel_name: str, data: Any, save_log: bool = True, log_aggregate: bool = False, override_aggregate: bool = False, timestamp: Optional[datetime] = None):
         post_data = {"msg": data}
-        if save_log:
-            post_data["record_log"] = save_log
+        
+        post_data["record_log"] = save_log
         if log_aggregate:
             post_data["log_aggregate"] = True
         if override_aggregate:

@@ -12,6 +12,8 @@ import time
 import traceback
 import uuid
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 from datetime import datetime, timedelta
 from getpass import getpass
 from typing import Optional
@@ -30,6 +32,7 @@ from . import parsers
 from .. import __version__
 from ..cloud.api import Client, Forbidden, NotFound
 from ..cloud.api.channel import Processor, Task
+from ..cloud.api.message import Message
 
 from .config import ConfigEntry, ConfigManager, NotSet
 from .decorators import command, annotate_arg
@@ -358,7 +361,16 @@ class CLI:
     @annotate_arg("task_name", "Task channel name to create.")
     @annotate_arg("package_path", "Path to the  processor package to publish")
     @annotate_arg("channel_name", "[Optional] take the last message from this channel to start the task.")
-    def invoke_local_task(self, task_name: parsers.task_name, package_path: pathlib.Path, channel_name: Optional[str] = None):
+    @annotate_arg("csv_file", "[Optional] Path to a CSV export of messages to run the task on.")
+    @annotate_arg("parallel_processes", "[Optional] Number of parallel processes to run the task with.")
+    @annotate_arg("dry_run", "Whether to run the task without invoking it.")
+    def invoke_local_task(self,
+                            task_name: parsers.task_name,
+                            package_path: pathlib.Path,
+                            channel_name: Optional[str] = None,
+                            csv_file: pathlib.Path = None,
+                            parallel_processes: int = None,
+                            dry_run: bool = False):
         """Invoke a task locally."""
         task_name = "!" + task_name.lstrip('!')
         task = self.api.get_channel_named(task_name, self.agent_id)
@@ -369,16 +381,46 @@ class CLI:
 
         agent = self.api.get_agent(self.agent_id)
 
-        msg_obj = None
-        if channel_name:
-            channel = self.api.get_channel_named(channel_name, self.agent_id)
-            msg_obj = channel.last_message
+        def run_for_single_message(msg_obj, *args, **kwargs):
+            if dry_run:
+                return "Dry run successful. Task not invoked."
+            msg_dict = msg_obj.to_dict() if msg_obj else None
+            task.invoke_locally(
+                package_path,
+                msg_dict,
+                {"deployment_config": agent.deployment_config}
+            )
+            output = f"Task invoked successfully. Message ID: {msg_obj.id if msg_obj else None}."
+            if kwargs:
+                output = output + f" Extra kwargs: {kwargs}"
+            return output
 
-        task.invoke_locally(
-            package_path,
-            msg_obj,
-            {"deployment_config": agent.deployment_config}
-        )
+        if csv_file is not None:
+            messages = Message.from_csv_export(self.api, csv_file)
+            print(f"Loaded {len(messages)} messages from CSV export.")
+
+            if not parallel_processes or parallel_processes == 1:
+                for msg in messages:
+                    print(f"\nRunning task for message: {msg.id}, with timestamp: {msg.timestamp}. {messages.index(msg) + 1}/{len(messages)}\n")
+                    run_for_single_message(msg)
+            else:
+                with ThreadPoolExecutor(max_workers=parallel_processes) as executor:
+                    futures = [executor.submit(run_for_single_message, msg, task_num=messages.index(msg), total_tasks=len(messages)) for msg in messages]
+                    for future in as_completed(futures):
+                        print(future.result())
+
+        else:
+
+            msg_obj = None
+            if channel_name:
+                channel = self.api.get_channel_named(channel_name, self.agent_id)
+                msg_obj = channel.last_message
+
+            if not msg_obj:
+                print("No message found. running task without a message.")
+            else:
+                print(f"\nRunning task for message: {msg_obj.id}, with timestamp: {msg_obj.timestamp}\n")
+            run_for_single_message(msg_obj)
 
     @command(setup_api=True)
     def create_processor(self, processor_name: parsers.processor_name):
@@ -535,7 +577,8 @@ class CLI:
 
         for entry in data.get("deployment_channel_messages", []):
             channel = self.api.create_channel(entry["channel_name"], self.agent_id)
-            channel.publish(entry["channel_message"])
+            save_log = entry.get("save_log", True)
+            channel.publish(entry["channel_message"], save_log=save_log)
             print(f"Published message to {channel.name}")
 
         print("Successfully deployed config.")

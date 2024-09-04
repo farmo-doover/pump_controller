@@ -340,7 +340,14 @@ class UIManager:
         # self._set_new_ui_cmds(ui_cmds_agg)
         self.on_command_update(None, ui_cmds_agg)
 
-    def push(self, record_log: bool = True, should_remove: bool = True, timestamp: Optional[datetime] = None, even_if_empty: bool = False) -> bool:
+    def push(self,
+            record_log: bool = True,
+            should_remove: bool = True,
+            timestamp: Optional[datetime] = None,
+            even_if_empty: bool = False,
+            only_channels: Optional[list] = None,
+            publish_fields: Optional[list] = [],
+        ) -> bool:
         # self.check_dda()
         if self._has_persistent_connection:
             if not self._is_conn_ready():
@@ -361,17 +368,21 @@ class UIManager:
             self.pull()  # do a pull before HTTP client pushes anything...
 
         print("pushing...")
-        commands_update = self._get_commands_update()
+        commands_update = self._get_commands_update(publish_fields=publish_fields)
         if commands_update is not None:
             ui_cmds_msg = {"cmds": commands_update}
-            self._publish_to_channel("ui_cmds", ui_cmds_msg, timestamp=timestamp)
 
-        ui_state_update = self._get_ui_state_update(should_remove=should_remove)
+            if only_channels is None or "ui_cmds" in only_channels:
+                self._publish_to_channel("ui_cmds", ui_cmds_msg, timestamp=timestamp)
+
+        ui_state_update = self._get_ui_state_update(should_remove=should_remove, retain_fields=publish_fields)
         if ui_state_update is not None:
-            self._publish_to_channel("ui_state", ui_state_update, record_log=record_log, timestamp=timestamp)
+            if only_channels is None or "ui_state" in only_channels:
+                self._publish_to_channel("ui_state", ui_state_update, record_log=record_log, timestamp=timestamp)
         elif even_if_empty:
-            print("pushing empty ui state")
-            self._publish_to_channel("ui_state", {}, record_log=record_log, timestamp=timestamp)
+            if only_channels is None or "ui_state" in only_channels:
+                print("pushing empty ui state")
+                self._publish_to_channel("ui_state", {}, record_log=record_log, timestamp=timestamp)
         else:
             print("not pushing empty ui state")
 
@@ -384,7 +395,7 @@ class UIManager:
         log.info("Clearing UI")
         self._publish_to_channel("ui_state", {"state": None})
 
-    def _get_commands_update(self) -> Optional[dict[str, Any]]:
+    def _get_commands_update(self, publish_fields: Optional[list] = []) -> Optional[dict[str, Any]]:
         cloud_commands = copy.deepcopy(self.last_ui_cmds)
         local_commands = {k: v._json_safe_current_value() for k, v in self._interactions.items()}
 
@@ -392,6 +403,7 @@ class UIManager:
         result = {
             name: value for name, value in local_commands.items()
             if cloud_commands.get(name) != value and value != NotSet
+            or name in publish_fields
         }
 
         log.debug("Last Commands: " + str(cloud_commands))
@@ -405,10 +417,10 @@ class UIManager:
             return None
         return result
 
-    def _get_ui_state_update(self, should_remove: bool = True) -> Optional[dict[str, Any]]:
+    def _get_ui_state_update(self, should_remove: bool = True, retain_fields: Optional[list] = []) -> Optional[dict[str, Any]]:
         cloud_state = self.last_ui_state or {}
         # this recursively evaluates and finds the diff on all children, rather than trying to do the diff here
-        result = self._base_container.get_diff(cloud_state, remove=should_remove)
+        result = self._base_container.get_diff(cloud_state, remove=should_remove, retain_fields=retain_fields)
 
         log.debug("Last UI State: " + str(cloud_state))
         log.debug("New UI State: " + str(self._base_container.to_dict()))
