@@ -385,9 +385,6 @@ export default class RemoteComponent extends RemoteAccess {
         const now = new Date();
         const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
-        console.log("state check",this.state);
-        // console.log("checking how we're going to retrieve datetime",this.state.sortedTimeSlots[0].startTime.getTime());
-
         if (startDate < twentyFourHoursAgo) {
             this.setState({ startDateError: "Start date cannot be more than 24 hours in the past." });
             return;
@@ -660,8 +657,6 @@ export default class RemoteComponent extends RemoteAccess {
             let currentDate = new Date(startDate);
             let modeObject;
             
-
-            console.log("descending into perrilous while loop");
             while (currentDate <= endDate) {
                 let valStart;
                 let valEnd;
@@ -677,12 +672,6 @@ export default class RemoteComponent extends RemoteAccess {
                         if ((checkStart <= valStart && checkEnd >= valStart)
                             || (checkStart < valEnd && checkEnd >= valEnd)
                         ) {
-                            console.log("valStart",valStart);
-                            console.log("valEnd",valEnd);
-                            console.log("checkStart",checkStart);
-                            console.log("checkEnd",checkEnd);
-                            console.log("currentDate",currentDate);
-                            console.log("endDate",endDate);
                             this.setState({ editError: "editing in this way would cause a conflict. Please try again" });
                             return;
                         }
@@ -949,7 +938,7 @@ export default class RemoteComponent extends RemoteAccess {
 
                     if (Array.isArray(timeslots)) {
                         timeslots.forEach((timeslot) => {
-                            if (typeof timeslot === 'object' && timeslot) {
+                            if (typeof timeslot === 'object' && timeslot && (timeslot.end_time > (Date.now() / 1000))) {
                                 const { start_time: tsStartTime, end_time: tsEndTime, edited, mode: tsMode } = timeslot;
                                 const slotDuration = (tsEndTime - tsStartTime) / 3600;
                                 let slotColor = scheduleColors[index];
@@ -992,6 +981,7 @@ export default class RemoteComponent extends RemoteAccess {
                 }, () => {
                     this.sortSchedules();
                 });
+                this.pushChanges();
             })
             .catch((err) => {
                 console.error('ERROR:', err);
@@ -1319,58 +1309,82 @@ export default class RemoteComponent extends RemoteAccess {
                                 currentPageSlots.map((slot, index) => (
                                     //console.log("slot",slot),
                                     <React.Fragment key={index}>
-                                        <Grid item xs={4} sx = {{ backgroundColor: slot.color}}>
-                                            <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
-                                        </Grid>
-                                        <Grid item xs={4} sx = {{ backgroundColor: slot.color}}>
-                                            <Typography align="center">
-                                                {
-                                                    toggleView === 'Timeslots'
-                                                        ? hasModes
-                                                            ? (slot.mode && slot.mode.type) || 'No Mode'
-                                                            : slot.scheduleName
-                                                        : slot.name
-                                                }
-                                            </Typography>
-                                        </Grid>
-                                        <Grid item xs={2} sx = {{ backgroundColor: slot.color}}>
-                                            <Typography align="center">{slot.duration}</Typography>
-                                        </Grid>
-                                        <Grid item xs={2} sx = {{ backgroundColor: slot.color}}>
-                                            <Box display="flex" justifyContent="space-between">
-                                                <Button
-                                                    variant="contained"
-                                                    sx={{
-                                                        backgroundColor: '#FFC107',
-                                                        color: '#FFFFFF',
-                                                        minWidth: '48%',
-                                                        width: '48%',
-                                                        '&:hover': {
-                                                            backgroundColor: '#FFA000'
-                                                        }
-                                                    }}
-                                                    onClick={() => this.handleEditOpen(index)}
-                                                >
-                                                    <EditIcon />
-                                                </Button>
-                                                <Button
-                                                    variant="contained"
-                                                    sx={{
-                                                        backgroundColor: '#F44336',
-                                                        color: '#FFFFFF',
-                                                        minWidth: '48%',
-                                                        width: '48%',
-                                                        '&:hover': {
-                                                            backgroundColor: '#D32F2F'
-                                                        }
-                                                    }}
-                                                    onClick={() => this.handleDeleteOpen(index)}
-                                                >
-                                                    <RemoveCircleIcon />
-                                                </Button>
-                                            </Box>
-                                        </Grid>
-                                    </React.Fragment>
+                                    <Grid item xs={4} sx={{ 
+                                        backgroundColor: slot.color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minHeight: '40px' // Adjust this value as needed
+                                    }}>
+                                        <Typography align="center">{this.formatDateTime(slot.startTime)}</Typography>
+                                    </Grid>
+                                    <Grid item xs={4} sx={{ 
+                                        backgroundColor: slot.color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minHeight: '40px' // Adjust this value as needed
+                                    }}>
+                                        <Typography align="center">
+                                            {
+                                                toggleView === 'Timeslots'
+                                                    ? hasModes
+                                                        ? (slot.mode && slot.mode.type) || 'No Mode'
+                                                        : slot.scheduleName
+                                                    : slot.name
+                                            }
+                                        </Typography>
+                                    </Grid>
+                                    <Grid item xs={2} sx={{ 
+                                        backgroundColor: slot.color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minHeight: '40px' // Adjust this value as needed
+                                    }}>
+                                        <Typography align="center">{slot.duration}</Typography>
+                                    </Grid>
+                                    <Grid item xs={2} sx={{ 
+                                        backgroundColor: slot.color,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        minHeight: '40px' // Adjust this value as needed
+                                    }}>
+                                        <Box display="flex" justifyContent="space-between" width="100%">
+                                            <Button
+                                                variant="contained"
+                                                sx={{
+                                                    backgroundColor: '#FFC107',
+                                                    color: '#FFFFFF',
+                                                    minWidth: '48%',
+                                                    width: '48%',
+                                                    '&:hover': {
+                                                        backgroundColor: '#FFA000'
+                                                    }
+                                                }}
+                                                onClick={() => this.handleEditOpen(index)}
+                                            >
+                                                <EditIcon />
+                                            </Button>
+                                            <Button
+                                                variant="contained"
+                                                sx={{
+                                                    backgroundColor: '#F44336',
+                                                    color: '#FFFFFF',
+                                                    minWidth: '48%',
+                                                    width: '48%',
+                                                    '&:hover': {
+                                                        backgroundColor: '#D32F2F'
+                                                    }
+                                                }}
+                                                onClick={() => this.handleDeleteOpen(index)}
+                                            >
+                                                <RemoveCircleIcon />
+                                            </Button>
+                                        </Box>
+                                    </Grid>
+                                </React.Fragment>
                                 ))
                             ) : (
                                 <Box>
