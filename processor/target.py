@@ -96,10 +96,10 @@ class target(ProcessorBase):
 
             save_log_required = False ## We don't want to show the device updating if we are just fetching the last message
 
-        raw_message = self.message.fetch_payload()
-        if raw_message is None:
-            logging.info("No payload found in message - skipping processing")
-            return
+        #raw_message = self.message.fetch_payload()
+        #if raw_message is None:
+        #    logging.info("No payload found in message - skipping processing")
+        #    return
         
         
         target_tank_level = None
