@@ -31,7 +31,17 @@ class target(ProcessorBase):
         self._ui_elements = construct_ui(self)
         self.ui_manager.set_children(self._ui_elements)
         self.ui_manager.pull()
+        self.update_imei()
 
+    def update_imei(self):
+        ## Retrieve the IMEI from the agent config
+        imei = str(self.get_agent_config("IMEI"))
+        if not imei:
+            logging.error("IMEI not found in agent config")
+            return
+        else:
+            logging.info(f"IMEI: {imei}")
+        self.ui_manager.update_variable("imei", imei)
 
     def process(self):
         message_type = self.package_config.get("message_type")
@@ -48,16 +58,6 @@ class target(ProcessorBase):
 
     def on_deploy(self):
         ## Run any deployment code here
-
-        ## Retrieve the IMEI from the agent config
-        imei = str(self.get_agent_config("IMEI"))
-        if not imei:
-            logging.error("IMEI not found in agent config")
-            return
-        else:
-            logging.info(f"IMEI: {imei}")
-        self.ui_manager.update_variable("imei", imei)
-
 
         # Construct the UI
         self.ui_manager.push()
