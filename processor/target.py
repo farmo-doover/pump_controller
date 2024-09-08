@@ -46,6 +46,16 @@ class target(ProcessorBase):
     def on_deploy(self):
         ## Run any deployment code here
 
+        ## Retrieve the IMEI from the agent config
+        imei = str(self.get_agent_config("IMEI"))
+        if not imei:
+            logging.error("IMEI not found in agent config")
+            return
+        else:
+            logging.info(f"IMEI: {imei}")
+        self.ui_manager.update_variable("imei", imei)
+
+
         # Construct the UI
         self.ui_manager.push()
 
@@ -57,7 +67,19 @@ class target(ProcessorBase):
 
     def on_downlink(self):
         # Run any downlink processing code here
-        return
+        
+        ## Handle an update of the pump state from the UI
+        pump_mode = self.ui_manager.get_variable("pumpMode")
+        if pump_mode:
+            imei = str(self.get_agent_config("IMEI"))
+            if not imei:
+                logging.error("IMEI not found in agent config")
+                return
+            else:
+                logging.info(f"IMEI: {imei}")
+            farmo_client = FarmoClient()
+            farmo_client.set_pump_mode(imei, pump_mode)
+
 
     def on_uplink(self):
 
