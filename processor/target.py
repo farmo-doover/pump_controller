@@ -15,12 +15,15 @@ class target(ProcessorBase):
 
     def setup(self):
 
+        self.uplink_channel_name = "uplinks"
+
         # Get the required channels
         self.ui_state_channel = self.api.create_channel("ui_state", self.agent_id)
         self.ui_cmds_channel = self.api.create_channel("ui_cmds", self.agent_id)
         
         self.significant_event_channel = self.api.create_channel("significantEvent", self.agent_id)
         # self.activity_log_channel = self.api.create_channel("activity_log", self.agent_id)
+        self.uplink_channel = self.api.create_channel(self.uplink_channel_name, self.agent_id)
 
         self.pump_schedules_channel = self.api.create_channel("schedules", self.agent_id)
 
