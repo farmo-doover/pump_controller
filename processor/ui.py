@@ -27,6 +27,7 @@ def construct_ui(processor):
                 ui.Option("autoLevel", "Tank Level"),
                 ui.Option("autoLevelSchedule", "Tank Level + Schedule"),
             ],
+            default_val="off"
         ),
         # ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
         # ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
