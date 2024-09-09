@@ -22,10 +22,10 @@ def construct_ui(processor):
         ui.StateCommand("pumpMode", "Pump Mode", 
             user_options=[
                 ui.Option("off", "Off"),
-                ui.Option("on", "On Forever"),
+                ui.Option("on_forever", "On Forever"),
                 ui.Option("schedule", "Schedule"),
-                ui.Option("autoLevel", "Tank Level"),
-                ui.Option("autoLevelSchedule", "Tank Level + Schedule"),
+                ui.Option("tank_level", "Tank Level"),
+                ui.Option("tank_level_schedule", "Tank Level + Schedule"),
             ],
             default_val="off"
         ),

@@ -81,7 +81,8 @@ class target(ProcessorBase):
             else:
                 logging.info(f"IMEI: {imei}")
             farmo_client = FarmoClient()
-            farmo_client.set_pump_mode(imei, pump_mode)
+            result = farmo_client.set_pump_mode(imei, pump_mode)
+            logging.info(f"Result of setting pump mode: {result}")
 
 
     def on_uplink(self):
