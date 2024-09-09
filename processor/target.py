@@ -72,7 +72,7 @@ class target(ProcessorBase):
         # Run any downlink processing code here
         
         ## Handle an update of the pump state from the UI
-        pump_mode = self.ui_manager.get_command("pumpMode")
+        pump_mode = self.ui_manager.get_command("pumpMode").current_value
         if pump_mode:
             imei = str(self.get_agent_config("IMEI"))
             if not imei:
