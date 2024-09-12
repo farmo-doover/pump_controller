@@ -28,7 +28,7 @@ class TimeSlot {
 }
 
 class Schedule {
-    constructor(name, frequency, startTime, endTime, duration, mode = { type: '' }, color = '#FFFFFF') {
+    constructor(name, frequency, startTime, endTime, duration, mode = { type: '' }, color = '#FFFFFF', edited = 0) {
         this.name = name;
         this.frequency = frequency;
         this.startTime = startTime;
@@ -37,7 +37,7 @@ class Schedule {
         this.mode = mode;
         this.timeSlots = [];
         this.color = color;
-        this.edited = 0;
+        this.edited = edited;
     }
 
     addTimeSlot(timeSlot) {
@@ -504,6 +504,7 @@ export default class RemoteComponent extends RemoteAccess {
                                 updatedSchedules[indexSched] = {
                                     ...updatedSchedules[indexSched],
                                     timeSlots: updatedTimeSlots,
+                                    edited: 1, 
                                 };
             
                                 return {
