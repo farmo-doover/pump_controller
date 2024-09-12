@@ -475,6 +475,7 @@ export default class RemoteComponent extends RemoteAccess {
             let schedCreated = false;
             let newSchedule;
             let modeObject;
+            let collideAsSuch = 0;
             
             while (currentDate <= endDate) {
                 let valStart;
@@ -514,6 +515,7 @@ export default class RemoteComponent extends RemoteAccess {
                             });
                             this.pushChanges();
                             collide = true;
+                            collideAsSuch = 1;
                             break middleLoop; 
                         } 
                     }
@@ -525,6 +527,7 @@ export default class RemoteComponent extends RemoteAccess {
                         schedCreated = true;
                     }
                     newSchedule.addTimeSlot(new TimeSlot(new Date(currentDate), duration, 0, modeObject));
+                    newSchedule.edited = collideAsSuch;
                     schedCreated = true;
                 }
                 if (frequency === 'daily') {
