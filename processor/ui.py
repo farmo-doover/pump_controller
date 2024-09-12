@@ -9,28 +9,30 @@ def construct_ui(processor):
     ui_elems = (
         create_multiplot(),
         ui.AlertStream("significantEvents", "Notify me of any problems"),
-        ui.BooleanVariable("pumpState", "Pump Running"),
-        ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
-            dec_precision=2,
-            form=ui.Widget.radial,
-            ranges=[
-                ui.Range("Low", 0, 1, ui.Colour.blue),
-                ui.Range("Pumping", 1, 3, ui.Colour.green),
-                ui.Range("High", 3, 4, ui.Colour.yellow),
-            ]
-        ),
+        # ui.BooleanVariable("pumpState", "Pump Running"),
+        # ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
+        #     dec_precision=2,
+        #     form=ui.Widget.radial,
+        #     ranges=[
+        #         ui.Range("Low", 0, 1, ui.Colour.blue),
+        #         ui.Range("Pumping", 1, 3, ui.Colour.green),
+        #         ui.Range("High", 3, 4, ui.Colour.yellow),
+        #     ]
+        # ),
         ui.StateCommand("pumpMode", "Pump Mode", 
             user_options=[
                 ui.Option("off", "Off"),
-                ui.Option("on", "On Forever"),
+                ui.Option("on_forever", "On Forever"),
                 ui.Option("schedule", "Schedule"),
-                ui.Option("autoLevel", "Tank Level"),
-                ui.Option("autoLevelSchedule", "Tank Level + Schedule"),
+                ui.Option("tank_level", "Tank Level"),
+                ui.Option("tank_level_schedule", "Tank Level + Schedule"),
             ],
+            default_val="off"
         ),
-        ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
-        ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
+        # ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
+        # ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
 
+        ui.TextVariable("imei", "IMEI"),
         ui.Submodule("levelSettingsSubmodule", "Level Settings",
             children=[
                 ui.StateCommand("targetSensor", "Tank Sensor",

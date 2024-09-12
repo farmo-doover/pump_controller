@@ -84,7 +84,8 @@
             "channel_name": "ui_state",
             "channel_message": {
                 "state": null
-            }
+            },
+            "save_log": false
         },
         {
             "channel_name" : "deployments",

@@ -15,12 +15,15 @@ class target(ProcessorBase):
 
     def setup(self):
 
+        self.uplink_channel_name = "uplinks"
+
         # Get the required channels
         self.ui_state_channel = self.api.create_channel("ui_state", self.agent_id)
         self.ui_cmds_channel = self.api.create_channel("ui_cmds", self.agent_id)
         
         self.significant_event_channel = self.api.create_channel("significantEvent", self.agent_id)
         # self.activity_log_channel = self.api.create_channel("activity_log", self.agent_id)
+        self.uplink_channel = self.api.create_channel(self.uplink_channel_name, self.agent_id)
 
         self.pump_schedules_channel = self.api.create_channel("schedules", self.agent_id)
 
@@ -28,7 +31,17 @@ class target(ProcessorBase):
         self._ui_elements = construct_ui(self)
         self.ui_manager.set_children(self._ui_elements)
         self.ui_manager.pull()
+        self.update_imei()
 
+    def update_imei(self):
+        ## Retrieve the IMEI from the agent config
+        imei = str(self.get_agent_config("IMEI"))
+        if not imei:
+            logging.error("IMEI not found in agent config")
+            return
+        else:
+            logging.info(f"IMEI: {imei}")
+        self.ui_manager.update_variable("imei", imei)
 
     def process(self):
         message_type = self.package_config.get("message_type")
@@ -57,7 +70,20 @@ class target(ProcessorBase):
 
     def on_downlink(self):
         # Run any downlink processing code here
-        return
+        
+        ## Handle an update of the pump state from the UI
+        pump_mode = self.ui_manager.get_command("pumpMode").current_value
+        if pump_mode:
+            imei = str(self.get_agent_config("IMEI"))
+            if not imei:
+                logging.error("IMEI not found in agent config")
+                return
+            else:
+                logging.info(f"IMEI: {imei}")
+            farmo_client = FarmoClient()
+            result = farmo_client.set_pump_mode(imei, pump_mode)
+            logging.info(f"Result of setting pump mode: {result}")
+
 
     def on_uplink(self):
 
@@ -71,10 +97,10 @@ class target(ProcessorBase):
 
             save_log_required = False ## We don't want to show the device updating if we are just fetching the last message
 
-        raw_message = self.message.fetch_payload()
-        if raw_message is None:
-            logging.info("No payload found in message - skipping processing")
-            return
+        #raw_message = self.message.fetch_payload()
+        #if raw_message is None:
+        #    logging.info("No payload found in message - skipping processing")
+        #    return
         
         
         target_tank_level = None

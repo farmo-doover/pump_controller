@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import logging
 
 from typing import Any, Union, Callable, overload, Literal, Optional, TypeVar
@@ -16,6 +17,15 @@ class Route:
 
         if kwargs:
             self.url = f"{self.url}?{urlencode(kwargs)}"
+
+
+## An enum for the pump modes
+class PumpMode:
+    OFF = "off"
+    ON = "on_forever"
+    SCHEDULE = "schedule"
+    TANK_LEVEL = "tank_level"
+    TANK_LEVEL_SCHEDULE = "tank_level_schedule"
 
 
 class Client:
@@ -93,6 +103,22 @@ class Client:
         logging.debug(f"{url} has received {data}")
         return data
         
+    def get_pump_mode(self, imei: str):
+        raise NotImplementedError
+        return self._request(Route("GET", "get_pump_mode/{}", imei))
+
+    def set_pump_mode(self, imei: str, mode: str):
+        ## Check if the mode is valid
+        if mode not in [PumpMode.OFF, PumpMode.ON, PumpMode.SCHEDULE, PumpMode.TANK_LEVEL, PumpMode.TANK_LEVEL_SCHEDULE]:
+            raise ValueError(f"Invalid pump mode: {mode}")
+        
+        return self._request(Route("POST", "set_pump_mode"),
+            json={
+                "rpc_imei": imei,
+                "pump_mode": mode
+            }
+        )
+
     def get_schedules(self, imei: str):
         return self._request(Route("GET", "get_schedules/{}", imei))
 
@@ -110,3 +136,12 @@ class Client:
 
     def add_schedules_manual(self, data: dict):
         return self._request(Route("POST", "add_schedules_manual"), json=data)
+    
+
+
+if __name__ == "__main__":
+
+    ## Test the client
+    client = Client()
+    print(client.set_pump_mode("333555333555333", PumpMode.OFF))
+    # print(client.get_pump_mode("333555333555333"))
