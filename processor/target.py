@@ -82,6 +82,9 @@ class target(ProcessorBase):
         self.ui_manager.update_variable("imei", imei)
 
     def get_internal_pump_state(self):
+        pump_state_obj = self.ui_manager.get_command("_pumpState")
+        if not pump_state_obj:
+            return None
         return self.ui_manager.get_command("_pumpState").current_value
 
     def set_internal_pump_state(self, state):
