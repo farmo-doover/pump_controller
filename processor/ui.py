@@ -36,12 +36,12 @@ def construct_ui(processor):
         ui.Submodule("levelSettingsSubmodule", "Level Settings",
             children=[
                 ui.StateCommand("targetSensor", "Tank Sensor",
-                    user_options=[
-                        get_sensor_options(processor),
+                    user_options=get_sensor_options(processor),
+                    # user_options=[
                         # ui.Option("tank1", "Tank 1"),
                         # ui.Option("tank2", "Tank 2"),
                         # ui.Option("tank3", "Tank 3"),
-                    ],
+                    # ],
                 ),
                 ui.NumericVariable(
                     "targetTankLevel",
@@ -131,7 +131,7 @@ def get_sensor_options(processor):
     sensors = processor.get_available_tank_sensors()
     options = []
     for sensor in sensors:
-        options.append(ui.Option(sensor["id"], sensor["name"]))
+        options.append(ui.Option(str(sensor["IMEI"]), sensor["NAME"]))
     return options
 
 

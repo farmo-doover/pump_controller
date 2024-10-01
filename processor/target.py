@@ -65,7 +65,7 @@ class target(ProcessorBase):
         return self._tank_sensor
 
     def get_available_tank_sensors(self):
-        tank_sensors = self.get_agent_config("tank_sensors")
+        tank_sensors = self.get_agent_config("TANK_SENSORS")
         if not tank_sensors:
             logging.error("Tank sensors not found in agent config")
             return
