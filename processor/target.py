@@ -101,7 +101,8 @@ class target(ProcessorBase):
             ss_button.colour = "red" 
         else:
             ss_button.display_name = "Start Now"
-            ss_button.colour = "green" 
+            ss_button.colour = "green"
+        self.ui_manager.update_interaction("startStopNow", ss_button)
 
     def process(self):
         message_type = self.package_config.get("message_type")

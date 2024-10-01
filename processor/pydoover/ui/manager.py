@@ -252,6 +252,13 @@ class UIManager:
             return self._interactions[name]
         except KeyError:
             return None
+        
+    def update_interaction(self, name: str, updated: Interaction) -> bool:
+        if name not in self._interactions:
+            return False
+        
+        self._interactions[name] = updated
+        return True
 
     add_command = add_interaction
     get_command = get_interaction
