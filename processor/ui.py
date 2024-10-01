@@ -31,7 +31,8 @@ def construct_ui(processor):
         ),
         # ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
         # ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
-        get_immediate_action_button(processor),
+        # get_immediate_action_button(processor),
+        ui.Action("startStopNow", "Start Now", colour="green", requires_confirm=True),
 
         ui.Submodule("levelSettingsSubmodule", "Level Settings",
             children=[
@@ -120,11 +121,11 @@ def create_multiplot():
     return multiplot
 
 
-def get_immediate_action_button(processor):
-    if processor.get_internal_pump_state():
-        return ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False)
-    else:
-        return ui.Action("startNow", "Start Now", colour="green", requires_confirm=True)
+# def get_immediate_action_button(processor):
+#     if processor.get_internal_pump_state():
+#         return ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False)
+#     else:
+#         return ui.Action("startNow", "Start Now", colour="green", requires_confirm=True)
 
 
 def get_sensor_options(processor):

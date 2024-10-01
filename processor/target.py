@@ -94,6 +94,14 @@ class target(ProcessorBase):
 
     def set_internal_pump_state(self, state):
         self.ui_manager.coerce_command("_pumpState", state)
+        ## Update the 'startStopNow' button
+        ss_button = self.ui_manager.get_interaction("startStopNow")
+        if state:
+            ss_button.set_label("Stop Now")
+            ss_button.set_colour("red") 
+        else:
+            ss_button.set_label("Start Now")
+            ss_button.set_colour("green")
 
     def process(self):
         message_type = self.package_config.get("message_type")
@@ -123,16 +131,6 @@ class target(ProcessorBase):
     def on_downlink(self):
         # Run any downlink processing code here
 
-        ## Handle an update of the pump state from the UI
-        pump_mode = self.ui_manager.get_command("pumpMode").current_value
-        if pump_mode:
-            result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
-            logging.info(f"Result of setting pump mode: {result}")
-            if pump_mode == PumpMode.ON:
-                self.set_internal_pump_state(True)
-            elif pump_mode == PumpMode.OFF:
-                self.set_internal_pump_state(False)
-
         ## Handle an update of the target tank sensor from the UI
         target_tank_sensor = self.ui_manager.get_command("targetSensor").current_value
         if target_tank_sensor:
@@ -149,28 +147,34 @@ class target(ProcessorBase):
             result = tank_sensor_obj.set_tank_threshold(tank_level_triggers[0], tank_level_triggers[1])
             logging.info(f"Result of setting tank thresholds: {result}")
 
-        ## Handle a pending start pump command from the UI
-        if self.ui_manager.get_command("startNow") and self.ui_manager.get_command("startNow").current_value:
-            result = self.get_pump_controller_obj().start_pump()
-            logging.info(f"Result of starting pump: {result}")
-            self.set_internal_pump_state(True)
-            ## Clear the start pump command
-            self.ui_manager.coerce_command("startNow", None)
+        ## Handle a pending start/stop pump command from the UI
+        if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
+            ## get the current pump state
+            pump_state = self.get_internal_pump_state()
+            if pump_state:
+                result = self.get_pump_controller_obj().stop_pump()
+                logging.info(f"Result of stopping pump: {result}")
+                self.set_internal_pump_state(False)
+            else:
+                result = self.get_pump_controller_obj().start_pump()
+                logging.info(f"Result of starting pump: {result}")
+                self.set_internal_pump_state(True)
+            ## Clear the pending command
+            self.ui_manager.coerce_command("startStopNow", None)
 
-        ## Handle a pending stop pump command from the UI
-        if self.ui_manager.get_command("stopNow") and self.ui_manager.get_command("stopNow").current_value:
-            result = self.get_pump_controller_obj().stop_pump()
-            logging.info(f"Result of stopping pump: {result}")
-            self.set_internal_pump_state(False)
-            ## Clear the stop pump command
-            self.ui_manager.coerce_command("stopNow", None)
+        ## Handle an update of the pump state from the UI
+        pump_mode = self.ui_manager.get_command("pumpMode").current_value
+        if pump_mode:
+            result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
+            logging.info(f"Result of setting pump mode: {result}")
+            if pump_mode == PumpMode.ON:
+                self.set_internal_pump_state(True)
+            elif pump_mode == PumpMode.OFF:
+                self.set_internal_pump_state(False)
 
         ## Recompute the UI values
         self.on_uplink()
 
-        ## Recompute the UI
-        self.construct_ui()
-        self.ui_manager.push()
 
     def on_uplink(self):
 
