@@ -128,7 +128,7 @@ class Client:
         )
     
     def get_tank_level(self, imei: str):
-        return self._request(Route("GET", "get_tank_level"),
+        return self._request(Route("POST", "get_tank_level"),
             json={
                 "imei": imei
             }

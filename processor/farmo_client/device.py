@@ -44,10 +44,8 @@ class Device:
 
 class TankSensor(Device):
 
-    @cached_property
-    def get_tank_level(self) -> int:
-        return self.client.get_tank_level(self.imei)
-
+    def set_tank_threshold(self, low_threshold: int, high_threshold: int) -> bool:
+        return self.client.set_tank_threshold(self.imei, low_threshold, high_threshold)
 
 class PumpController(Device):
 
@@ -61,9 +59,13 @@ class PumpController(Device):
     def set_tank_sensor(self, tank_sensor: TankSensor) -> bool:
         return self.client.set_pump_tank_sensor(self.imei, tank_sensor.imei)
     
-    def set_tank_threshold(self, low_threshold: int, high_threshold: int) -> bool:
-        return self.client.set_tank_threshold(self.imei, low_threshold, high_threshold)
-    
+    @cached_property
+    def get_tank_level(self) -> int:
+        result = self.client.get_tank_level(self.imei)
+        if result is not None and 'percent_full' in result:
+            return result['percent_full']
+        return None
+
     def start_pump(self) -> bool:
         return self.client.pump_start_now(self.imei)
     
