@@ -27,10 +27,6 @@
                     {
                         "channel_name" : "uplink_recv",
                         "is_active" : true
-                    },
-                    {
-                        "channel_name" : "ui_cmds",
-                        "is_active" : true
                     }
                 ]
             },
