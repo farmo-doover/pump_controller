@@ -74,6 +74,9 @@ class target(ProcessorBase):
         return tank_sensors
 
     def get_tank_level_triggers(self):
+        tank_level_trigger_obj = self.ui_manager.get_command("tankLevelTriggers")
+        if not tank_level_trigger_obj:
+            return None
         tank_level_triggers = self.ui_manager.get_command("tankLevelTriggers").current_value
         return tank_level_triggers
 

@@ -138,7 +138,12 @@ def get_sensor_options(processor):
 def get_tank_level_ranges(processor):
 
     ## get low and high thresholds
-    low_threshold, high_threshold = processor.get_tank_level_triggers()
+    result = processor.get_tank_level_triggers()
+    if result is None:
+        low_threshold = 50
+        high_threshold = 90
+    else:
+        low_threshold, high_threshold = result
 
     return [
         ui.Range("Start", 0, low_threshold, ui.Colour.yellow),

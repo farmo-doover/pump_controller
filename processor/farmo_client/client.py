@@ -145,7 +145,7 @@ class Client:
     def set_tank_threshold(self, imei: str, low_threshold: int, high_threshold: int):
         return self._request(Route("POST", "set_tank_threshold"),
             json={
-                "tank_imei": imei, # This is actually referring to the pump imei ??
+                "tank_imei": imei,
                 "low_threshold": low_threshold,
                 "high_threshold": high_threshold
             }
