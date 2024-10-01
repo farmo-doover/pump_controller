@@ -15,6 +15,8 @@ from .variable import Variable
 
 from ..cloud.api import Client
 
+from .utils import find_object_with_key, find_path_to_key
+
 if TYPE_CHECKING:
     from ..docker.device_agent.device_agent import device_agent_iface
 
@@ -196,6 +198,11 @@ class UIManager:
 
         self.last_ui_state = payload
         self.last_ui_state_update = time.time()
+
+        ## TODO: Implement this ????
+        # if self._base_container is not None:
+        #     self._base_container.from_dict(payload)
+
         return payload
 
     def _add_interaction(self, interaction: Interaction):
@@ -258,7 +265,13 @@ class UIManager:
         command.coerce(value, critical=critical)
 
     def get_element(self, element_name: str) -> Optional[ElementT]:
-        return self._base_container.get_element(element_name)
+        result = self._base_container.get_element(element_name)
+        # if not result:
+        #     result = find_object_with_key(self.last_ui_state, element_name)
+        return result
+    
+    def get_from_ui_state(self, element_name: str) -> Optional[dict]:
+        return find_object_with_key(self.last_ui_state, element_name)
 
     def update_variable(self, variable_name: str, value: Any, critical: bool = False) -> bool:
         element = self._base_container.get_element(variable_name)

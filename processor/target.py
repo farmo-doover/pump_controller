@@ -1,15 +1,16 @@
 import logging, json, time
-from datetime import datetime, timezone, timedelta
+# from datetime import datetime, timezone, timedelta
 
 from pydoover.cloud.processor import ProcessorBase
 
 from farmo_client import Client as FarmoClient
-from farmo_client import ScheduleManager as FarmoScheduleManager
-from farmo_client import ScheduleItem as FarmoScheduleItem
+# from farmo_client import ScheduleManager as FarmoScheduleManager
+# from farmo_client import ScheduleItem as FarmoScheduleItem
+
+from farmo_client import PumpMode, TankSensor, PumpController
 
 from ui import construct_ui
 
-import uuid
 
 class target(ProcessorBase):
 
@@ -33,15 +34,58 @@ class target(ProcessorBase):
         self.ui_manager.pull()
         self.update_imei()
 
-    def update_imei(self):
-        ## Retrieve the IMEI from the agent config
+    def get_imei(self):
         imei = str(self.get_agent_config("IMEI"))
         if not imei:
             logging.error("IMEI not found in agent config")
-            return
+            raise Exception("IMEI not found in agent config")
         else:
             logging.info(f"IMEI: {imei}")
+        return imei
+
+    def get_farmo_client(self):
+        if not hasattr(self, "_farmo_client"):
+            self._farmo_client = FarmoClient()
+        return self._farmo_client
+
+    def get_pump_controller_obj(self):
+        if not hasattr(self, "_pump_controller"):
+            imei = self.get_imei()
+            self._pump_controller = PumpController(self.get_farmo_client(), imei)
+        return self._pump_controller
+
+    def get_tank_sensor_obj(self):
+        target_tank_imei = self.ui_manager.get_command("targetSensor").current_value
+        if not target_tank_imei:
+            logging.error("Target tank sensor not found in UI")
+            return None
+        logging.info(f"Target tank sensor: {target_tank_imei}")
+        if not hasattr(self, "_tank_sensor") or self._tank_sensor.imei != target_tank_imei:
+            self._tank_sensor = TankSensor(self.get_farmo_client(), target_tank_imei)
+        return self._tank_sensor
+
+    def get_available_tank_sensors(self):
+        tank_sensors = self.get_agent_config("tank_sensors")
+        if not tank_sensors:
+            logging.error("Tank sensors not found in agent config")
+            return
+        else:
+            logging.info(f"Tank sensors: {tank_sensors}")
+        return tank_sensors
+
+    def get_tank_level_triggers(self):
+        tank_level_triggers = self.ui_manager.get_command("tankLevelTriggers").current_value
+        return tank_level_triggers
+
+    def update_imei(self):
+        imei = self.get_imei()
         self.ui_manager.update_variable("imei", imei)
+
+    def get_internal_pump_state(self):
+        return self.ui_manager.get_command("_pumpState").current_value
+
+    def set_internal_pump_state(self, state):
+        self.ui_manager.coerce_command("_pumpState", state)
 
     def process(self):
         message_type = self.package_config.get("message_type")
@@ -70,19 +114,51 @@ class target(ProcessorBase):
 
     def on_downlink(self):
         # Run any downlink processing code here
-        
+        pump_controller = self.get_pump_controller_obj()
+
         ## Handle an update of the pump state from the UI
         pump_mode = self.ui_manager.get_command("pumpMode").current_value
         if pump_mode:
-            imei = str(self.get_agent_config("IMEI"))
-            if not imei:
-                logging.error("IMEI not found in agent config")
-                return
-            else:
-                logging.info(f"IMEI: {imei}")
-            farmo_client = FarmoClient()
-            result = farmo_client.set_pump_mode(imei, pump_mode)
+            result = pump_controller.set_pump_mode(pump_mode)
             logging.info(f"Result of setting pump mode: {result}")
+            if pump_mode == PumpMode.ON:
+                self.set_internal_pump_state(True)
+            elif pump_mode == PumpMode.OFF:
+                self.set_internal_pump_state(False)
+
+        ## Handle an update of the target tank sensor from the UI
+        target_tank_sensor = self.ui_manager.get_command("targetSensor").current_value
+        if target_tank_sensor:
+            result = pump_controller.set_tank_sensor(self.get_tank_sensor_obj())
+            logging.info(f"Result of setting tank sensor: {result}")
+
+        ## Handle an update of the tank thresholds from the UI
+        tank_level_triggers = self.get_tank_level_triggers()
+        if tank_level_triggers:
+            result = pump_controller.set_tank_threshold(tank_level_triggers[0], tank_level_triggers[1])
+            logging.info(f"Result of setting tank thresholds: {result}")
+
+        ## Handle a pending start pump command from the UI
+        start_pump = self.ui_manager.get_command("startNow").current_value
+        if start_pump:
+            result = pump_controller.start_pump()
+            logging.info(f"Result of starting pump: {result}")
+            self.set_internal_pump_state(True)
+            ## Clear the start pump command
+            self.ui_manager.update_command("startNow", None)
+
+        ## Handle a pending stop pump command from the UI
+        stop_pump = self.ui_manager.get_command("stopNow").current_value
+        if stop_pump:
+            result = pump_controller.stop_pump()
+            logging.info(f"Result of stopping pump: {result}")
+            self.set_internal_pump_state(False)
+            ## Clear the stop pump command
+            self.ui_manager.update_command("stopNow", None)
+
+
+        ## Recompute the UI values
+        self.on_uplink()
 
 
     def on_uplink(self):
@@ -102,15 +178,19 @@ class target(ProcessorBase):
         #    logging.info("No payload found in message - skipping processing")
         #    return
         
-        
+        ## Get the pump state
+        pump_running = self.get_internal_pump_state()
+
+        ## Get the tank level
         target_tank_level = None
-        pump_running = None
-        pump_pressure = None
+        tank_sensor = self.get_tank_sensor_obj()
+        if tank_sensor:
+            target_tank_level = tank_sensor.get_tank_level()
+            logging.info(f"Tank level: {target_tank_level}")
 
         ## Update the UI Values
         self.ui_manager.update_variable("targetTankLevel", target_tank_level)
         self.ui_manager.update_variable("pumpState", pump_running)
-        self.ui_manager.update_variable("pumpPressure", pump_pressure)
 
         ## Update the UI
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)

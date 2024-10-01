@@ -50,7 +50,7 @@ KEY_MATCH = re.compile(r"[0-9a-z]{8}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z
 
 
 class CLI:
-    def __init__(self):
+    def __init__(self, profile: str = "default", agent: str = None):
         parser = argparse.ArgumentParser(prog="doover", description="Tools for helping with doover.")
         parser.add_argument("--version", action="version", version=f"doover {__version__.__version__}")
         parser.set_defaults(callback=parser.print_help)
@@ -60,11 +60,11 @@ class CLI:
         self.args = args = parser.parse_args()
 
         self.config_manager = ConfigManager()
-        self.config_manager.current_profile = getattr(args, "profile", "default")
+        self.config_manager.current_profile = getattr(args, "profile", profile)
         self.api: Optional[Client] = None
 
         if hasattr(args, "agent_id"):
-            self.agent_id = args.agent_id if args.agent_id != "default" else None
+            self.agent_id = args.agent_id if args.agent_id != "default" else agent
         else:
             self.agent_id = None
 

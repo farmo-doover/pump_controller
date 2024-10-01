@@ -118,6 +118,52 @@ class Client:
                 "pump_mode": mode
             }
         )
+    
+    ## Is this set_name or get_name ??
+    def get_name(self, imei: str):
+        return self._request(Route("POST", "get_name"),
+            json={
+                "imei": imei,
+            }
+        )
+    
+    def get_tank_level(self, imei: str):
+        return self._request(Route("GET", "get_tank_level"),
+            json={
+                "imei": imei
+            }
+        )
+
+    def set_pump_tank_sensor(self, pump_imei: str, tank_sensor_imei: str):
+        return self._request(Route("POST", "update_tank"),
+            json={
+                "pump_imei": pump_imei,
+                "tank_imei": tank_sensor_imei
+            }
+        )
+    
+    def set_tank_threshold(self, imei: str, low_threshold: int, high_threshold: int):
+        return self._request(Route("POST", "set_tank_threshold"),
+            json={
+                "tank_imei": imei, # This is actually referring to the pump imei ??
+                "low_threshold": low_threshold,
+                "high_threshold": high_threshold
+            }
+        )
+    
+    def pump_start_now(self, imei: str):
+        return self._request(Route("POST", "start_now"),
+            json={
+                "imei": imei
+            }
+        )
+    
+    def pump_stop_now(self, imei: str):
+        return self._request(Route("POST", "stop_now"),
+            json={
+                "imei": imei
+            }
+        )
 
     def get_schedules(self, imei: str):
         return self._request(Route("GET", "get_schedules/{}", imei))

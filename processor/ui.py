@@ -9,7 +9,7 @@ def construct_ui(processor):
     ui_elems = (
         create_multiplot(),
         ui.AlertStream("significantEvents", "Notify me of any problems"),
-        # ui.BooleanVariable("pumpState", "Pump Running"),
+        ui.BooleanVariable("pumpState", "Pump Running"),
         # ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
         #     dec_precision=2,
         #     form=ui.Widget.radial,
@@ -31,15 +31,16 @@ def construct_ui(processor):
         ),
         # ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
         # ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
+        get_immediate_action_button(processor),
 
-        ui.TextVariable("imei", "IMEI"),
         ui.Submodule("levelSettingsSubmodule", "Level Settings",
             children=[
                 ui.StateCommand("targetSensor", "Tank Sensor",
                     user_options=[
-                        ui.Option("tank1", "Tank 1"),
-                        ui.Option("tank2", "Tank 2"),
-                        ui.Option("tank3", "Tank 3"),
+                        get_sensor_options(processor),
+                        # ui.Option("tank1", "Tank 1"),
+                        # ui.Option("tank2", "Tank 2"),
+                        # ui.Option("tank3", "Tank 3"),
                     ],
                 ),
                 ui.NumericVariable(
@@ -47,9 +48,7 @@ def construct_ui(processor):
                     "Tank Level (%)",
                     dec_precision=0,
                     ranges=[
-                        ui.Range("Start", 0, 50, ui.Colour.yellow),
-                        ui.Range("", 50, 90, ui.Colour.blue),
-                        ui.Range("Stop", 90, 100, ui.Colour.green),
+                        get_tank_level_ranges(processor)
                     ]
                 ),
                 ui.Slider(
@@ -58,16 +57,16 @@ def construct_ui(processor):
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
                     default_val=[50, 90]
                 ),
-                ui.Slider("levelAlert", "Low Level Alert (%)", 
-                    min_val=0, max_val=100, step_size=1, dual_slider=False,
-                    inverted=False, icon="fa-regular fa-bell", show_activity=True,
-                    default_val=40
-                ),
-                ui.Slider("runtimeAlert", "Pump Runtime Alert (hrs)", 
-                    min_val=0, max_val=50, step_size=1, dual_slider=False,
-                    inverted=False, icon="fa-regular fa-bell", show_activity=True,
-                    default_val=12
-                )
+                # ui.Slider("levelAlert", "Low Level Alert (%)", 
+                #     min_val=0, max_val=100, step_size=1, dual_slider=False,
+                #     inverted=False, icon="fa-regular fa-bell", show_activity=True,
+                #     default_val=40
+                # ),
+                # ui.Slider("runtimeAlert", "Pump Runtime Alert (hrs)", 
+                #     min_val=0, max_val=50, step_size=1, dual_slider=False,
+                #     inverted=False, icon="fa-regular fa-bell", show_activity=True,
+                #     default_val=12
+                # )
             ]
         ),
         ui.Submodule("scheduleSubmodule", "Schedule",
@@ -79,6 +78,8 @@ def construct_ui(processor):
                 ),
             ]
         ),
+        ui.TextVariable("imei", "IMEI"),
+        ui.HiddenValue("_pumpState", "Pump State"),
         ui.ConnectionInfo(name="connectionInfo",
             connection_type=ui.ConnectionType.periodic,
             connection_period=processor.get_connection_period(),
@@ -97,17 +98,17 @@ def create_multiplot():
     overview_plot_series = [
         "targetTankLevel",
         "pumpState",
-        "pumpPressure",
+        # "pumpPressure",
     ]
     overview_plot_colours = [
         "blue",
         "tomato",
-        "green",
+        # "green",
     ]
     overview_plot_active = [
         True,
         False,
-        False,
+        # False,
     ]
 
     multiplot = ui.Multiplot("overviewPlot", "Overview",
@@ -117,3 +118,30 @@ def create_multiplot():
     )
 
     return multiplot
+
+
+def get_immediate_action_button(processor):
+    if processor.get_internal_pump_state():
+        return ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False)
+    else:
+        return ui.Action("startNow", "Start Now", colour="green", requires_confirm=True)
+
+
+def get_sensor_options(processor):
+    sensors = processor.get_available_tank_sensors()
+    options = []
+    for sensor in sensors:
+        options.append(ui.Option(sensor["id"], sensor["name"]))
+    return options
+
+
+def get_tank_level_ranges(processor):
+
+    ## get low and high thresholds
+    low_threshold, high_threshold = processor.get_tank_level_triggers()
+
+    return [
+        ui.Range("Start", 0, low_threshold, ui.Colour.yellow),
+        ui.Range("", low_threshold, high_threshold, ui.Colour.blue),
+        ui.Range("Stop", high_threshold, 100, ui.Colour.green),
+    ]
