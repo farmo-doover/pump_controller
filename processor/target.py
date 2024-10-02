@@ -37,7 +37,7 @@ class target(ProcessorBase):
         self.ui_manager.pull()
 
     def get_imei(self):
-        imei = str(self.get_agent_config("IMEI"))
+        imei = str(self.get_agent_config("FARMO_IMEI"))
         if not imei:
             logging.error("IMEI not found in agent config")
             raise Exception("IMEI not found in agent config")
@@ -255,7 +255,7 @@ class target(ProcessorBase):
             return
 
         # Create the Farmo Client
-        imei = str(self.get_agent_config("IMEI"))
+        imei = str(self.get_imei())
         #imei = "333555333555333"
         if not imei:
             logging.error("IMEI not found in agent config")
