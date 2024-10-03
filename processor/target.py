@@ -87,14 +87,14 @@ class target(ProcessorBase):
         imei = self.get_imei()
         self.ui_manager.update_variable("imei", imei)
 
-    def get_internal_pump_state(self):
-        pump_state_obj = self.ui_manager.get_command("_pumpState")
+    def get_pump_state(self):
+        pump_state_obj = self.ui_manager.get_from_ui_state("pumpState")
         if not pump_state_obj:
             return None
-        return self.ui_manager.get_command("_pumpState").current_value
+        return pump_state_obj.current_value
 
-    def set_internal_pump_state(self, state):
-        self.ui_manager.coerce_command("_pumpState", state)
+    def set_pump_state(self, state):
+        # self.ui_manager.coerce_command("_pumpState", state)
         ## Update the 'startStopNow' button
         ss_button = self.ui_manager.get_interaction("startStopNow")
         if state:
@@ -156,7 +156,7 @@ class target(ProcessorBase):
         ## Handle a pending start/stop pump command from the UI
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
             ## Get the current pump state
-            pump_state = self.get_internal_pump_state()
+            pump_state = self.get_pump_state()
             ## Get the current pump mode command
             pump_mode = self.ui_manager.get_command("pumpMode").current_value
             if pump_state:
@@ -165,14 +165,14 @@ class target(ProcessorBase):
                 if pump_mode == PumpMode.ON:
                     ## Coerce the pump state to off
                     self.ui_manager.coerce_command("pumpMode", PumpMode.OFF)
-                # self.set_internal_pump_state(False)
+                # self.set_pump_state(False)
             else:
                 result = self.get_pump_controller_obj().start_pump()
                 logging.info(f"Result of starting pump: {result}")
                 if pump_mode == PumpMode.OFF:
                     ## Coerce the pump state to on
                     self.ui_manager.coerce_command("pumpMode", PumpMode.ON)
-                # self.set_internal_pump_state(True)
+                # self.set_pump_state(True)
             
             # ## Clear the pending command
             # self.ui_manager.coerce_command("startStopNow", None)
@@ -183,9 +183,9 @@ class target(ProcessorBase):
             result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
             logging.info(f"Result of setting pump mode: {result}")
             # if pump_mode == PumpMode.ON:
-            #     self.set_internal_pump_state(True)
+            #     self.set_pump_state(True)
             # elif pump_mode == PumpMode.OFF:
-            #     self.set_internal_pump_state(False)
+            #     self.set_pump_state(False)
 
         ## Add a warning to show that a pending command is in progress
         ## This can be removed once the command has been processed
@@ -237,7 +237,7 @@ class target(ProcessorBase):
             logging.info(f"Pump state: {pump_running}")
             if pump_running is not None:
                 pump_running = bool(pump_running)
-                self.set_internal_pump_state(pump_running)
+                self.set_pump_state(pump_running)
 
         ## Get the tank level
         target_tank_level = None
