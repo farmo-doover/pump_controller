@@ -105,6 +105,9 @@ class target(ProcessorBase):
             ss_button.colour = "green"
         self.ui_manager.update_interaction("startStopNow", ss_button)
 
+    def get_warning_indicator(self):
+        return ui.WarningIndicator("pendingCommand", "Waiting for pump controller to receive command")
+
     def process(self):
         message_type = self.package_config.get("message_type")
 
@@ -187,7 +190,7 @@ class target(ProcessorBase):
         ## Add a warning to show that a pending command is in progress
         ## This can be removed once the command has been processed
         self.ui_manager.add_children([
-            ui.WarningIndicator("pendingCommand", "Waiting for pump controller to receive command")
+            self.get_warning_indicator()
         ])
 
         ## Recompute the UI values
@@ -253,7 +256,7 @@ class target(ProcessorBase):
         if save_log_required:
             ## Clear the pending command
             self.ui_manager.coerce_command("startStopNow", None)
-            self.ui_manager.remove_children(["pendingCommand"])
+            self.ui_manager.remove_children([self.get_warning_indicator()])
 
         ## Update the UI
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
