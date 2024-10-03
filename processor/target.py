@@ -189,11 +189,13 @@ class target(ProcessorBase):
             # elif pump_mode == PumpMode.OFF:
             #     self.set_pump_state(False)
 
-        ## Add a warning to show that a pending command is in progress
-        ## This can be removed once the command has been processed
-        self.ui_manager.add_children([
-            self.get_warning_indicator()
-        ])
+        ## If trigger message is not from the owner_agent, set the pending command warning
+        if self.message and self.message.agent_id != self.agent_id:
+            ## Add a warning to show that a pending command is in progress
+            ## This can be removed once the command has been processed
+            self.ui_manager.add_children([
+                self.get_warning_indicator()
+            ])
 
         ## Recompute the UI values
         self.on_uplink()
