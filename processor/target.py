@@ -2,6 +2,7 @@ import logging, json, time
 # from datetime import datetime, timezone, timedelta
 
 from pydoover.cloud.processor import ProcessorBase
+from pydoover import ui
 
 from farmo_client import Client as FarmoClient
 # from farmo_client import ScheduleManager as FarmoScheduleManager
@@ -16,7 +17,7 @@ class target(ProcessorBase):
 
     def setup(self):
 
-        self.uplink_channel_name = "uplinks"
+        self.uplink_channel_name = "farmo_uplink_recv"
 
         # Get the required channels
         self.ui_state_channel = self.api.create_channel("ui_state", self.agent_id)
@@ -112,7 +113,8 @@ class target(ProcessorBase):
         elif message_type == "DOWNLINK":
             self.on_downlink()
         elif message_type == "UPLINK":
-            self.on_uplink()
+            # self.on_uplink()
+            self.on_downlink()
         elif message_type == "SCHEDULE_UPDATE":
             self.on_schedule_update()
 
@@ -160,32 +162,51 @@ class target(ProcessorBase):
                 if pump_mode == PumpMode.ON:
                     ## Coerce the pump state to off
                     self.ui_manager.coerce_command("pumpMode", PumpMode.OFF)
-                self.set_internal_pump_state(False)
+                # self.set_internal_pump_state(False)
             else:
                 result = self.get_pump_controller_obj().start_pump()
                 logging.info(f"Result of starting pump: {result}")
                 if pump_mode == PumpMode.OFF:
                     ## Coerce the pump state to on
                     self.ui_manager.coerce_command("pumpMode", PumpMode.ON)
-                self.set_internal_pump_state(True)
-            ## Clear the pending command
-            self.ui_manager.coerce_command("startStopNow", None)
+                # self.set_internal_pump_state(True)
+            
+            # ## Clear the pending command
+            # self.ui_manager.coerce_command("startStopNow", None)
 
         ## Handle an update of the pump state from the UI
         pump_mode = self.ui_manager.get_command("pumpMode").current_value
         if pump_mode:
             result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
             logging.info(f"Result of setting pump mode: {result}")
-            if pump_mode == PumpMode.ON:
-                self.set_internal_pump_state(True)
-            elif pump_mode == PumpMode.OFF:
-                self.set_internal_pump_state(False)
+            # if pump_mode == PumpMode.ON:
+            #     self.set_internal_pump_state(True)
+            # elif pump_mode == PumpMode.OFF:
+            #     self.set_internal_pump_state(False)
+
+        ## Add a warning to show that a pending command is in progress
+        ## This can be removed once the command has been processed
+        self.ui_manager.add_children([
+            ui.WarningIndicator("pendingCommand", "Waiting for pump controller to receive command")
+        ])
 
         ## Recompute the UI values
         self.on_uplink()
 
 
     def on_uplink(self):
+
+        ## Example uplink message
+        # {
+        #     "unitID": "354513596466486",
+        #     "message": {
+        #         "timestamp": 1727851754,
+        #         "farmo_device_name": "RPC-6486",
+        #         "farmo_device_type": "remote_pump_control_v1",
+        #         "imei": "354513596466486",
+        #         "switch_state": 0
+        #     }
+        # }
 
         save_log_required = True
 
@@ -195,15 +216,24 @@ class target(ProcessorBase):
             logging.info("No trigger message passed - fetching last message")
             self.message = self.uplink_channel.last_message
 
+            if not self.message:
+                logging.info("No message found - skipping processing")
+                return
+
             save_log_required = False ## We don't want to show the device updating if we are just fetching the last message
 
-        #raw_message = self.message.fetch_payload()
-        #if raw_message is None:
-        #    logging.info("No payload found in message - skipping processing")
-        #    return
+        raw_message = self.message.fetch_payload()
+        if raw_message is None:
+           logging.info("No payload found in message - skipping processing")
+           return
         
         ## Get the pump state
-        pump_running = self.get_internal_pump_state()
+        pump_running = None
+        if "message" in raw_message:
+            pump_running = raw_message["message"].get("switch_state")
+            logging.info(f"Pump state: {pump_running}")
+            if pump_running is not None:
+                self.set_internal_pump_state(pump_running)
 
         ## Get the tank level
         target_tank_level = None
@@ -217,6 +247,12 @@ class target(ProcessorBase):
         self.ui_manager.update_variable("pumpState", pump_running)
 
         self.update_imei()
+
+        ## If this is an update from the uplink channel, clear any pending commands
+        if save_log_required:
+            ## Clear the pending command
+            self.ui_manager.coerce_command("startStopNow", None)
+            self.ui_manager.remove_children("pendingCommand")
 
         ## Update the UI
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
@@ -346,4 +382,4 @@ class target(ProcessorBase):
                 logging.info(f"Timeslots: {test2}")    
 
     def get_connection_period(self):
-        return 60 * 60 * 12 ## 12 hours
+        return 60 * 60 * 3 ## 12 hours

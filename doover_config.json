@@ -25,7 +25,7 @@
                 },
                 "subscriptions" : [
                     {
-                        "channel_name" : "uplink_recv",
+                        "channel_name" : "farmo_uplink_recv",
                         "is_active" : true
                     }
                 ]
