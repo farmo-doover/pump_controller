@@ -91,7 +91,9 @@ class target(ProcessorBase):
         pump_state_obj = self.ui_manager.get_from_ui_state("pumpState")
         if not pump_state_obj:
             return None
-        return pump_state_obj.current_value
+        if 'currentValue' not in pump_state_obj:
+            return None
+        return pump_state_obj['currentValue']
 
     def set_pump_state(self, state):
         # self.ui_manager.coerce_command("_pumpState", state)
