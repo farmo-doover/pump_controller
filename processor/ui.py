@@ -48,9 +48,7 @@ def construct_ui(processor):
                     "targetTankLevel",
                     "Tank Level (%)",
                     dec_precision=0,
-                    ranges=[
-                        get_tank_level_ranges(processor)
-                    ]
+                    ranges=get_tank_level_ranges(processor),
                 ),
                 ui.Slider(
                     "tankLevelTriggers", "Tank Level Triggers (%)",
