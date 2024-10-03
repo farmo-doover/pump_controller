@@ -101,9 +101,15 @@ class Container(Element):
     def remove_children(self, *children: Element):
         for c in children:
             try:
-                del self._children[c.name]
+                if c.name in self._children:
+                    del self._children[c.name]
             except KeyError:
                 pass
+        
+        ## for all self._children, call remove_children on them
+        for c in self._children.values():
+            if isinstance(c, Container):
+                c.remove_children(*children)
 
     def clear_children(self):
         self._children.clear()

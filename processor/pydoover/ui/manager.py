@@ -486,13 +486,16 @@ class UIManager:
                 # sometimes an unregistered function can end up here and break things...
                 continue
 
-            self._remove_interaction(elem.name)
             if elem == self._base_container:
                 raise RuntimeError("You can't remove the base container!")
 
             # this should never be None, but in case some numpty does something weird...
             if getattr(elem, "parent", None):
                 elem.parent.remove_children(elem)
+
+            ## Remove the element
+            self._base_container.remove_children(elem)
+            self._remove_interaction(elem.name)
 
     def set_children(self, children: list[Element]) -> None:
         updated = self._maybe_add_interaction_from_elems(*children)
