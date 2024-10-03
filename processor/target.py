@@ -233,6 +233,7 @@ class target(ProcessorBase):
             pump_running = raw_message["message"].get("switch_state")
             logging.info(f"Pump state: {pump_running}")
             if pump_running is not None:
+                pump_running = bool(pump_running)
                 self.set_internal_pump_state(pump_running)
 
         ## Get the tank level
@@ -252,7 +253,7 @@ class target(ProcessorBase):
         if save_log_required:
             ## Clear the pending command
             self.ui_manager.coerce_command("startStopNow", None)
-            self.ui_manager.remove_children("pendingCommand")
+            self.ui_manager.remove_children(["pendingCommand"])
 
         ## Update the UI
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
