@@ -62,6 +62,18 @@ class target(ProcessorBase):
         if not target_tank_imei:
             logging.error("Target tank sensor not found in UI")
             return None
+            
+        ## Check if target tank sensor (which is an imei) is in the list of available tank sensors
+        available_tank_sensors = self.get_available_tank_sensors()
+        if not available_tank_sensors:
+            logging.error("No available tank sensors found")
+            return None
+        
+        ## Check if target tank sensor is in the list of available tank sensors
+        if target_tank_imei not in map(lambda x: x["IMEI"], available_tank_sensors):
+            logging.error(f"Target tank sensor {target_tank_imei} not found in available tank sensors")
+            return None
+
         logging.info(f"Target tank sensor: {target_tank_imei}")
         if not hasattr(self, "_tank_sensor") or self._tank_sensor.imei != target_tank_imei:
             self._tank_sensor = TankSensor(self.get_farmo_client(), target_tank_imei)
@@ -140,16 +152,12 @@ class target(ProcessorBase):
         # Run any downlink processing code here
 
         ## Handle an update of the target tank sensor from the UI
-        target_tank_sensor = self.ui_manager.get_command("targetSensor").current_value
-        if target_tank_sensor:
-            ## Check if target tank sensor (which is an imei) is in the list of available tank sensors
-            available_tank_sensors = self.get_available_tank_sensors()
-            if available_tank_sensors:
-                if target_tank_sensor in map(lambda x: x["IMEI"], available_tank_sensors):
-                    result = self.get_pump_controller_obj().set_tank_sensor(self.get_tank_sensor_obj())
-                    logging.info(f"Result of setting tank sensor: {result}")
-            else:
-                logging.warning("No available tank sensors found")
+        tank_sensor_obj = self.get_tank_sensor_obj()
+        if tank_sensor_obj:
+            result = self.get_pump_controller_obj().set_tank_sensor(self.get_tank_sensor_obj())
+            logging.info(f"Result of setting tank sensor: {result}")
+        else:
+            logging.warning("No available tank sensors found")
 
         ## Handle an update of the tank thresholds from the UI
         tank_level_triggers = self.get_tank_level_triggers()
