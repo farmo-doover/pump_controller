@@ -142,8 +142,14 @@ class target(ProcessorBase):
         ## Handle an update of the target tank sensor from the UI
         target_tank_sensor = self.ui_manager.get_command("targetSensor").current_value
         if target_tank_sensor:
-            result = self.get_pump_controller_obj().set_tank_sensor(self.get_tank_sensor_obj())
-            logging.info(f"Result of setting tank sensor: {result}")
+            ## Check if target tank sensor (which is an imei) is in the list of available tank sensors
+            available_tank_sensors = self.get_available_tank_sensors()
+            if available_tank_sensors:
+                if target_tank_sensor in map(lambda x: x["IMEI"], available_tank_sensors):
+                    result = self.get_pump_controller_obj().set_tank_sensor(self.get_tank_sensor_obj())
+                    logging.info(f"Result of setting tank sensor: {result}")
+            else:
+                logging.warning("No available tank sensors found")
 
         ## Handle an update of the tank thresholds from the UI
         tank_level_triggers = self.get_tank_level_triggers()
