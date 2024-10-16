@@ -88,6 +88,13 @@ class target(ProcessorBase):
             logging.info(f"Tank sensors: {tank_sensors}")
         return tank_sensors
 
+    def get_pump_mode(self):
+        pump_mode_obj = self.ui_manager.get_command("pumpMode")
+        if not pump_mode_obj:
+            return None
+        pump_mode = pump_mode_obj.current_value
+        return pump_mode
+
     def get_tank_level_triggers(self):
         tank_level_trigger_obj = self.ui_manager.get_command("tankLevelTriggers")
         if not tank_level_trigger_obj:
@@ -174,7 +181,7 @@ class target(ProcessorBase):
             ## Get the current pump state
             pump_state = self.get_pump_state()
             ## Get the current pump mode command
-            pump_mode = self.ui_manager.get_command("pumpMode").current_value
+            pump_mode = self.get_pump_mode()
             if pump_state:
                 result = self.get_pump_controller_obj().stop_pump()
                 logging.info(f"Result of stopping pump: {result}")
@@ -194,7 +201,7 @@ class target(ProcessorBase):
             # self.ui_manager.coerce_command("startStopNow", None)
 
         ## Handle an update of the pump state from the UI
-        pump_mode = self.ui_manager.get_command("pumpMode").current_value
+        pump_mode = self.get_pump_mode()
         if pump_mode:
             result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
             logging.info(f"Result of setting pump mode: {result}")
@@ -404,4 +411,4 @@ class target(ProcessorBase):
                 logging.info(f"Timeslots: {test2}")    
 
     def get_connection_period(self):
-        return 60 * 60 * 3 ## 12 hours
+        return 60 * 5 ## 5 mins

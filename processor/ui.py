@@ -1,6 +1,7 @@
 import logging
 
 from pydoover import ui
+from farmo_client import PumpMode
 
 
 def construct_ui(processor):
@@ -8,7 +9,7 @@ def construct_ui(processor):
 
     ui_elems = (
         create_multiplot(),
-        ui.AlertStream("significantEvents", "Notify me of any problems"),
+        # ui.AlertStream("significantEvents", "Notify me of any problems"),
         ui.BooleanVariable("pumpState", "Pump Running"),
         # ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
         #     dec_precision=2,
@@ -81,10 +82,10 @@ def construct_ui(processor):
         ui.HiddenValue("_pumpState", show_activity=False),
         ui.ConnectionInfo(name="connectionInfo",
             connection_type=ui.ConnectionType.periodic,
-            connection_period=processor.get_connection_period(),
-            next_connection=processor.get_connection_period(),
-            offline_after=(4 * processor.get_connection_period()),
-            allowed_misses=4,
+            # connection_period=processor.get_connection_period(),
+            # next_connection=processor.get_connection_period(),
+            offline_after=(60 * 60), # 1 hour
+            # allowed_misses=4,
         )
     )
 
@@ -136,6 +137,11 @@ def get_sensor_options(processor):
 
 def get_tank_level_ranges(processor):
 
+    ## get if in pump mode
+    pump_mode = processor.get_pump_mode()
+    if pump_mode not in [PumpMode.tank_level, PumpMode.tank_level_schedule]:
+        return None
+
     ## get low and high thresholds
     result = processor.get_tank_level_triggers()
     if result is None:
@@ -145,7 +151,7 @@ def get_tank_level_ranges(processor):
         low_threshold, high_threshold = result
 
     return [
-        ui.Range("Start", 0, low_threshold, ui.Colour.yellow),
+        ui.Range("Tank level will trigger pump start", 0, low_threshold, ui.Colour.yellow),
         ui.Range("", low_threshold, high_threshold, ui.Colour.blue),
-        ui.Range("Stop", high_threshold, 100, ui.Colour.green),
+        ui.Range("Tank level will trigger pump stop", high_threshold, 100, ui.Colour.green),
     ]
