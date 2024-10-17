@@ -139,8 +139,8 @@ def get_tank_level_ranges(processor):
 
     ## get if in pump mode
     pump_mode = processor.get_pump_mode()
-    logging.info(f"Waht even is this?: {len(PumpMode)}")
-    if pump_mode not in [PumpMode.tank_level, PumpMode.tank_level_schedule]:
+    logging.info(f"Cheking out a colour: {ui.Colour.blue}")
+    if pump_mode not in [PumpMode.TANK_LEVEL, PumpMode.TANK_LEVEL_SCHEDULE]:
         return None
 
     ## get low and high thresholds
