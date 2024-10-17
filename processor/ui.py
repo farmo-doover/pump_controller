@@ -139,7 +139,7 @@ def get_tank_level_ranges(processor):
 
     ## get if in pump mode
     pump_mode = processor.get_pump_mode()
-    logging.info(f"Waht even is this?: {PumpMode}")
+    logging.info(f"Waht even is this?: {processor}")
     if pump_mode not in [PumpMode.tank_level, PumpMode.tank_level_schedule]:
         return None
 
