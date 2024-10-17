@@ -468,7 +468,6 @@ class UIManager:
             elif isinstance(element, Interaction):
                 self._add_interaction(element)
                 logging.info(f"Added interaction inside _maybe_add_interaction_from_elems: {element}")
-                logging.info(f"Interactions: {element.user_options}")
             to_return.append(element)
 
         return to_return
