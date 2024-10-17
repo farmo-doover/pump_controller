@@ -208,9 +208,6 @@ class UIManager:
     def _add_interaction(self, interaction: Interaction):
         name = interaction.name.strip()
         logging.info(f"Adding interaction for {name}")
-        logging.info(f"=============================")
-        logging.info(''.join(traceback.format_stack())) 
-        logging.info(f"=============================")
         if not NAME_VALIDATOR.match(name):
             raise RuntimeError(
                 f"Invalid name '{name}' for interaction '{interaction}'. "
