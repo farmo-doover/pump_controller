@@ -207,12 +207,16 @@ class UIManager:
 
     def _add_interaction(self, interaction: Interaction):
         name = interaction.name.strip()
-        logging.info(f"Adding interaction for {name}")
         if not NAME_VALIDATOR.match(name):
             raise RuntimeError(
                 f"Invalid name '{name}' for interaction '{interaction}'. "
                 f"Valid characters include letters, numbers, and underscores."
             )
+        
+        if name in self._interactions:
+            ## If the interaction already exists, we should preserve the current value if it exists
+            if hasattr(self._interactions[name], "_current_value") and self._interactions[name]._current_value is not NotSet:
+                interaction.current_value = self._interactions[name]._current_value
 
         self._interactions[name] = interaction
         interaction._manager = self
@@ -249,8 +253,6 @@ class UIManager:
             self._register_interaction(func, obj_to_search)
 
     def get_interaction(self, name: str) -> Optional[Interaction]:
-        logging.info(f"Getting interaction for {name}")
-        logging.info(f"Interactions: {self._interactions}")
         try:
             return self._interactions[name]
         except KeyError:
@@ -467,8 +469,6 @@ class UIManager:
                 self._maybe_add_interaction_from_elems(*element.children)
             elif isinstance(element, Interaction):
                 self._add_interaction(element)
-                logging.info(f"Added interaction inside _maybe_add_interaction_from_elems: {element}")
-                logging.info(f"Interactions: {element.user_options}")
             to_return.append(element)
 
         return to_return

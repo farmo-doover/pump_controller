@@ -33,9 +33,9 @@ class target(ProcessorBase):
 
     def construct_ui(self):
         # Construct the UI
+        self.ui_manager.pull()
         self._ui_elements = construct_ui(self)
         self.ui_manager.set_children(self._ui_elements)
-        self.ui_manager.pull()
 
     def get_imei(self):
         imei = str(self.get_agent_config("FARMO_IMEI"))
