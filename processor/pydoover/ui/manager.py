@@ -248,6 +248,8 @@ class UIManager:
             self._register_interaction(func, obj_to_search)
 
     def get_interaction(self, name: str) -> Optional[Interaction]:
+        logging.info(f"Getting interaction for {name}")
+        logging.info(f"Interactions: {self._interactions[name]}")
         try:
             return self._interactions[name]
         except KeyError:
