@@ -470,6 +470,7 @@ class UIManager:
                 self._maybe_add_interaction_from_elems(*element.children)
             elif isinstance(element, Interaction):
                 self._add_interaction(element)
+                logging.info(f"Added interaction inside _maybe_add_interaction_from_elems: {element}")
             to_return.append(element)
 
         return to_return
