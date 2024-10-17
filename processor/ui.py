@@ -55,7 +55,7 @@ def construct_ui(processor):
                     "tankLevelTriggers", "Tank Level Triggers (%)",
                     min_val=0, max_val=100, step_size=1, dual_slider=True,
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
-                    default_val=[50, 90]
+                    default_val=[50, 90],colours=[ui.Colour.yellow,ui.Colour.blue,ui.Colour.green]
                 ),
                 # ui.Slider("levelAlert", "Low Level Alert (%)", 
                 #     min_val=0, max_val=100, step_size=1, dual_slider=False,
@@ -140,14 +140,18 @@ def get_tank_level_ranges(processor):
     ## get if in pump mode
     pump_mode = processor.get_pump_mode()
     if pump_mode not in [PumpMode.TANK_LEVEL, PumpMode.TANK_LEVEL_SCHEDULE]:
+        logging.info(f"Pump mode is not tank level or tank level schedule, returning None")
         return None
 
     ## get low and high thresholds
     result = processor.get_tank_level_triggers()
+    logging.info(f"Tank level triggers: {result}")
     if result is None:
+        logging.info(f"No tank level triggers set, returning default")
         low_threshold = 50
         high_threshold = 90
     else:
+
         low_threshold, high_threshold = result
 
     return [
