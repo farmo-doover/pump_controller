@@ -55,7 +55,7 @@ def construct_ui(processor):
                     "tankLevelTriggers", "Tank Level Triggers (%)",
                     min_val=0, max_val=100, step_size=1, dual_slider=True,
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
-                    default_val=[50, 90],colours = ['#ffea00','#0004ff','#00ff00']
+                    default_val=[50, 90]
                 ),
                 # ui.Slider("levelAlert", "Low Level Alert (%)", 
                 #     min_val=0, max_val=100, step_size=1, dual_slider=False,
