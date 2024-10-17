@@ -207,7 +207,7 @@ class UIManager:
 
     def _add_interaction(self, interaction: Interaction):
         name = interaction.name.strip()
-        logging.info(f"Adding interaction for {name} from _add_interaction and the interaction is of this type: {interaction.keys()}")
+        logging.info(f"Adding interaction for {name}")
         logging.info(f"=============================")
         logging.info(''.join(traceback.format_stack())) 
         logging.info(f"=============================")
