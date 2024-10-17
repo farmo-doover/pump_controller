@@ -249,7 +249,7 @@ class UIManager:
 
     def get_interaction(self, name: str) -> Optional[Interaction]:
         logging.info(f"Getting interaction for {name}")
-        logging.info(f"Interactions: {self._interactions[name]}")
+        logging.info(f"Interactions: {self._interactions}")
         try:
             return self._interactions[name]
         except KeyError:
