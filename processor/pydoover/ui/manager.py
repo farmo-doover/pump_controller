@@ -208,6 +208,9 @@ class UIManager:
     def _add_interaction(self, interaction: Interaction):
         name = interaction.name.strip()
         logging.info(f"Adding interaction for {name} from _add_interaction and the interaction is of this type: {interaction.keys()}")
+        logging.info(f"=============================")
+        logging.info(''.join(traceback.format_stack())) 
+        logging.info(f"=============================")
         if not NAME_VALIDATOR.match(name):
             raise RuntimeError(
                 f"Invalid name '{name}' for interaction '{interaction}'. "
@@ -224,7 +227,6 @@ class UIManager:
             return
 
     def add_interaction(self, interaction: InteractionT):
-        logging.info(f"Adding interaction from add_interaction: {interaction}")
         if not isinstance(interaction, Interaction) and hasattr(interaction, "_ui_type"):
             interaction = self._register_interaction(interaction, interaction.__self__)
 
@@ -241,8 +243,6 @@ class UIManager:
         except AttributeError:
             pass  # maybe they've initialised the function w/o a class
 
-        logging.info(f"Registered interaction: {item}")
-
         return item
 
     def register_interactions(self, obj_to_search):
@@ -250,7 +250,6 @@ class UIManager:
             obj_to_search, predicate=lambda f: inspect.ismethod(f) and hasattr(f, "_ui_type")
         ):
             self._register_interaction(func, obj_to_search)
-            logging.info(f"Registered interaction: {func}")
 
     def get_interaction(self, name: str) -> Optional[Interaction]:
         logging.info(f"Getting interaction for {name}")
