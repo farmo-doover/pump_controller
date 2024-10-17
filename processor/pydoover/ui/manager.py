@@ -207,7 +207,7 @@ class UIManager:
 
     def _add_interaction(self, interaction: Interaction):
         name = interaction.name.strip()
-        logging.info(f"Adding interaction for {name}")
+        logging.info(f"Adding interaction for {name} from _add_interaction")
         if not NAME_VALIDATOR.match(name):
             raise RuntimeError(
                 f"Invalid name '{name}' for interaction '{interaction}'. "
@@ -224,7 +224,7 @@ class UIManager:
             return
 
     def add_interaction(self, interaction: InteractionT):
-        logging.info(f"Adding interaction: {interaction}")
+        logging.info(f"Adding interaction from add_interaction: {interaction}")
         if not isinstance(interaction, Interaction) and hasattr(interaction, "_ui_type"):
             interaction = self._register_interaction(interaction, interaction.__self__)
 
