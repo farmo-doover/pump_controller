@@ -90,6 +90,7 @@ class target(ProcessorBase):
 
     def get_pump_mode(self):
         pump_mode_obj = self.ui_manager.get_command("pumpMode")
+        logging.info(f"Pump mode obj: {pump_mode_obj}")
         if not pump_mode_obj:
             return None
         pump_mode = pump_mode_obj.current_value
