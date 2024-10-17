@@ -55,7 +55,7 @@ def construct_ui(processor):
                     "tankLevelTriggers", "Tank Level Triggers (%)",
                     min_val=0, max_val=100, step_size=1, dual_slider=True,
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
-                    default_val=[50, 90]
+                    default_val=[50, 90],colours=["blue", "green", "tomato"]
                 ),
                 # ui.Slider("levelAlert", "Low Level Alert (%)", 
                 #     min_val=0, max_val=100, step_size=1, dual_slider=False,
@@ -139,7 +139,6 @@ def get_tank_level_ranges(processor):
 
     ## get if in pump mode
     pump_mode = processor.get_pump_mode()
-    logging.info(f"Cheking out a colour: {ui.Colour.blue}")
     if pump_mode not in [PumpMode.TANK_LEVEL, PumpMode.TANK_LEVEL_SCHEDULE]:
         return None
 
