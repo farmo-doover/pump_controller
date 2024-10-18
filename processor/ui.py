@@ -26,10 +26,10 @@ def construct_ui(processor):
                 ui.Option("on_forever", "On Forever"),
                 ui.Option("schedule", "Schedule"),
                 ui.Option("tank_level", "Tank Level"),
-                ui.Option("tank_level_schedule", "Tank Level + Schedule"),
-                ui.help_str="this is a tooltip"
+                ui.Option("tank_level_schedule", "Tank Level + Schedule")
             ],
-            default_val="off"
+            default_val="off",
+            help_str="This is a tooltip!"
         ),
         # ui.Action("startNow", "Start Now", colour="green", requires_confirm=True),
         # ui.Action("stopNow", "Stop Now", colour="red", requires_confirm=False),
