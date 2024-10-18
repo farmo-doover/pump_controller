@@ -139,14 +139,12 @@ def get_tank_level_ranges(processor):
 
     ## get if in pump mode
     pump_mode = processor.get_pump_mode()
-    logging.info(f"Pump mode: {pump_mode}")
     if pump_mode not in [PumpMode.TANK_LEVEL, PumpMode.TANK_LEVEL_SCHEDULE]:
         logging.info(f"Pump mode is not tank level or tank level schedule, returning None")
         return None
 
     ## get low and high thresholds
     result = processor.get_tank_level_triggers()
-    logging.info(f"Tank level triggers: {result}")
     if result is None:
         logging.info(f"No tank level triggers set, returning default")
         low_threshold = 50

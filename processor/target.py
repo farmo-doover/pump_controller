@@ -70,7 +70,7 @@ class target(ProcessorBase):
             return None
         
         ## Check if target tank sensor is in the list of available tank sensors
-        if target_tank_imei not in map(lambda x: x["IMEI"], available_tank_sensors):
+        if int(target_tank_imei) not in map(lambda x: x["IMEI"], available_tank_sensors):
             logging.error(f"Target tank sensor {target_tank_imei} not found in available tank sensors")
             return None
 
