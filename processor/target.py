@@ -168,6 +168,7 @@ class target(ProcessorBase):
 
         ## Handle an update of the tank thresholds from the UI
         tank_level_triggers = self.get_tank_level_triggers()
+        logging.info(f"Tank level triggers: {tank_level_triggers}")
         if tank_level_triggers:
             tank_sensor_obj = self.get_tank_sensor_obj()
             if not tank_sensor_obj:
