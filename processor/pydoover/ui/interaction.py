@@ -181,7 +181,7 @@ class Slider(Interaction):
     type = "uiSlider"
 
     def __init__(self, name: str, display_name: str = None, min_val: int = 0, max_val: int = 100, step_size: float = 0.1,
-                 dual_slider: bool = True, inverted: bool = True, icon: Optional[str] = None, **kwargs
+                 dual_slider: bool = True, inverted: bool = True, icon: Optional[str] = None, colours: list[str] = [], **kwargs
         ):
         super().__init__(name, display_name, **kwargs)
         self.min_val = min_val
@@ -190,7 +190,8 @@ class Slider(Interaction):
         self.dual_slider = dual_slider
         self.inverted = inverted
         self.icon = icon
-
+        self.colours = colours
+        
     def to_dict(self):
         result = super().to_dict()
         result["min"] = self.min_val
@@ -199,6 +200,7 @@ class Slider(Interaction):
         result["dualSlider"] = self.dual_slider
         result["isInverted"] = self.inverted
         result["icon"] = self.icon
+        result["colours"] = self.colours
         return result
 
 
