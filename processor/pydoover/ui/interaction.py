@@ -181,7 +181,7 @@ class Slider(Interaction):
     type = "uiSlider"
 
     def __init__(self, name: str, display_name: str = None, min_val: int = 0, max_val: int = 100, step_size: float = 0.1,
-                 dual_slider: bool = True, inverted: bool = True, icon: Optional[str] = None, colours: list[str] = [], **kwargs
+                 dual_slider: bool = True, inverted: bool = True, icon: Optional[str] = None, colours: Optional[str] = None, **kwargs
         ):
         super().__init__(name, display_name, **kwargs)
         self.min_val = min_val
