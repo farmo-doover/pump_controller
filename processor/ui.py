@@ -27,6 +27,7 @@ def construct_ui(processor):
                 ui.Option("schedule", "Schedule"),
                 ui.Option("tank_level", "Tank Level"),
                 ui.Option("tank_level_schedule", "Tank Level + Schedule"),
+                ui.help_str="this is a tooltip"
             ],
             default_val="off"
         ),
@@ -55,7 +56,7 @@ def construct_ui(processor):
                     "tankLevelTriggers", "Tank Level Triggers (%)",
                     min_val=0, max_val=100, step_size=1, dual_slider=True,
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
-                    default_val=[50, 90],colours=["yellow","blue","green"],help_str="this is a tooltip!"
+                    default_val=[50, 90],colours=["yellow","blue","green"],help_str="this is also a tooltip!"
                 ),
                 # ui.Slider("levelAlert", "Low Level Alert (%)", 
                 #     min_val=0, max_val=100, step_size=1, dual_slider=False,
