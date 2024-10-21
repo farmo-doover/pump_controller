@@ -177,6 +177,17 @@ class target(ProcessorBase):
             result = tank_sensor_obj.set_tank_threshold(tank_level_triggers[0], tank_level_triggers[1])
             logging.info(f"Result of setting tank thresholds: {result}")
 
+
+        ## Get the current pump state
+        pump_state = self.get_pump_state()
+        ## Get the current pump mode command
+        pump_mode = self.get_pump_mode()
+
+        logging.info("--------------------------------")
+        logging.info(f"Pump state: {pump_state}")
+        logging.info(f"Pump mode: {pump_mode}")
+        logging.info("--------------------------------")
+
         ## Handle a pending start/stop pump command from the UI
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
             ## Get the current pump state
