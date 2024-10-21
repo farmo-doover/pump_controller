@@ -39,6 +39,7 @@ def construct_ui(processor):
             children=[
                 ui.StateCommand("targetSensor", "Tank Sensor",
                     user_options=get_sensor_options(processor),
+                    help_str="Click to select a tank sensor",
                     # user_options=[
                         # ui.Option("tank1", "Tank 1"),
                         # ui.Option("tank2", "Tank 2"),
@@ -55,7 +56,7 @@ def construct_ui(processor):
                     "tankLevelTriggers", "Tank Level Triggers (%)",
                     min_val=0, max_val=100, step_size=1, dual_slider=True,
                     inverted=True, icon="fa-regular fa-tank-water", show_activity=True,
-                    default_val=[50, 90],colours=["yellow","blue","green"]
+                    default_val=[50, 90],colours=["yellow","blue","green"],help_str="Set the tank level triggers using the sliders. The left slider sets the lower threshold that triggers a pump start and the right slider sets the high threshold that triggers a pump stop."
                 ),
                 # ui.Slider("levelAlert", "Low Level Alert (%)", 
                 #     min_val=0, max_val=100, step_size=1, dual_slider=False,
