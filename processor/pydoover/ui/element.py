@@ -113,7 +113,6 @@ class ConnectionInfo(Element):
         if self.connection_type is not ConnectionType.periodic and (
             self.connection_period is not None
             or self.next_connection is not None
-            or self.offline_after is not None
             or self.allowed_misses is not None
         ):
             raise RuntimeError(
