@@ -110,12 +110,12 @@ class ConnectionInfo(Element):
         self.offline_after = offline_after
         self.allowed_misses = allowed_misses
 
-        if self.connection_type is not ConnectionType.periodic and (
-            self.connection_period is not None
-            or self.next_connection is not None
-            or self.offline_after is not None
-            or self.allowed_misses is not None
-        ):
+    if self.connection_type not in (ConnectionType.periodic, ConnectionType.other) and (
+        self.connection_period is not None
+        or self.next_connection is not None
+        or self.offline_after is not None
+        or self.allowed_misses is not None
+    ):
             raise RuntimeError(
                 "connection_type must be periodic to set connection_period, next_connection or offline_after"
             )
