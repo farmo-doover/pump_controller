@@ -106,17 +106,6 @@ class ConnectionInfo(Element):
         self.name = name
         self.connection_type = connection_type
         self.connection_period = connection_period
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info(f"Initializing ConnectionInfo with connection_type: {self.connection_type}")
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
-        logging.info('--------------------------------')
         self.next_connection = next_connection
         self.offline_after = offline_after
         self.allowed_misses = allowed_misses
