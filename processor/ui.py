@@ -78,6 +78,7 @@ def construct_ui(processor):
                 ),
             ]
         ),
+        
         # ui.TextVariable("imei", "IMEI"),
         ui.HiddenValue("_pumpState", show_activity=False),
         ui.ConnectionInfo(name="connectionInfo",
