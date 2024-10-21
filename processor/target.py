@@ -205,14 +205,14 @@ class target(ProcessorBase):
                 if pump_mode == PumpMode.ON:
                     ## Coerce the pump state to off
                     self.ui_manager.coerce_command("pumpMode", PumpMode.OFF)
-                # self.set_pump_state(False)
+                self.set_pump_state(False)
             else:
                 result = self.get_pump_controller_obj().start_pump()
                 logging.info(f"Result of starting pump: {result}")
                 if pump_mode == PumpMode.OFF:
                     ## Coerce the pump state to on
                     self.ui_manager.coerce_command("pumpMode", PumpMode.ON)
-                # self.set_pump_state(True)
+                self.set_pump_state(True)
             
             # ## Clear the pending command
             self.ui_manager.coerce_command("startStopNow", None)
