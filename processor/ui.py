@@ -85,7 +85,7 @@ def construct_ui(processor):
             # connection_type=ui.ConnectionType.periodic,
             # connection_period=processor.get_connection_period(),
             # next_connection=processor.get_connection_period(),
-            offline_after=(60 * 60), # 1 hour
+            # offline_after=(60 * 60), # 1 hour
             # allowed_misses=4,
         )
     )
