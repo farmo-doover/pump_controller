@@ -215,7 +215,7 @@ class target(ProcessorBase):
                 # self.set_pump_state(True)
             
             # ## Clear the pending command
-            # self.ui_manager.coerce_command("startStopNow", None)
+            self.ui_manager.coerce_command("startStopNow", None)
 
         ## Handle an update of the pump state from the UI
         pump_mode = self.get_pump_mode()
