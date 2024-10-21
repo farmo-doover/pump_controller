@@ -71,6 +71,7 @@ class Element:
 class ConnectionType(enum.Enum):
     constant = "constant"
     periodic = "periodic"
+    other = "other"
 
 
 class ConnectionInfo(Element):
