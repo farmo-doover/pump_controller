@@ -10,7 +10,7 @@ def construct_ui(processor):
     ui_elems = (
         create_multiplot(),
         # ui.AlertStream("significantEvents", "Notify me of any problems"),
-        ui.BooleanVariable("pumpState", "Pump Running"),
+        ui.BooleanVariable("pumpState", "Pump Status"),
         # ui.NumericVariable("pumpPressure", "Pump Pressure (bar)", 
         #     dec_precision=2,
         #     form=ui.Widget.radial,
