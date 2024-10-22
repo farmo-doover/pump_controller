@@ -270,6 +270,7 @@ class target(ProcessorBase):
 
             save_log_required = False ## We don't want to show the device updating if we are just fetching the last message
 
+        logging.info(f"checking this savelogrequired thing: {save_log_required}")
         raw_message = self.message.fetch_payload()
         logging.info(f"Raw message: {raw_message}")
         if raw_message is None:
