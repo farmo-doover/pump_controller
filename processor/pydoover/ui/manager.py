@@ -259,7 +259,7 @@ class UIManager:
             return None
         
     def update_interaction(self, name: str, updated: Interaction) -> bool:
-        logging.info(f'updating an interaction with name {name} and {interaction.__dict__}')
+        logging.info(f'updating an interaction with name {name} and {Interaction.__dict__}')
         if name not in self._interactions:
             return False
         
