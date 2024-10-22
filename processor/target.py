@@ -231,10 +231,10 @@ class target(ProcessorBase):
             ])
 
         ## Recompute the UI values
-        self.on_uplink()
+        self.on_uplink(from_downlink=True)
 
 
-    def on_uplink(self):
+    def on_uplink(self,from_downlink = False):
 
         ## Example uplink message
         # {
@@ -269,13 +269,14 @@ class target(ProcessorBase):
            return
         
         ## Get the pump state
-        pump_running = None
-        if "message" in raw_message:
-            pump_running = raw_message["message"].get("switch_state")
-            logging.info(f"Pump state: {pump_running}")
-            if pump_running is not None:
-                pump_running = bool(pump_running)
-                self.set_pump_state(pump_running)
+        if not from_downlink:
+            pump_running = None
+            if "message" in raw_message:
+                pump_running = raw_message["message"].get("switch_state")
+                logging.info(f"Pump state: {pump_running}")
+                if pump_running is not None:
+                    pump_running = bool(pump_running)
+                    self.set_pump_state(pump_running)
 
         ## Get the tank level
         target_tank_level = None
