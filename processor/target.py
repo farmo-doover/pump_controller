@@ -281,6 +281,7 @@ class target(ProcessorBase):
             pump_running = None
             if "message" in raw_message:
                 pump_running = raw_message["message"].get("switch_state")
+                logging.info(f"raw message: {raw_message}")
                 logging.info(f"Pump state: {pump_running}")
                 if pump_running is not None:
                     pump_running = bool(pump_running)
@@ -295,6 +296,7 @@ class target(ProcessorBase):
 
         ## Update the UI Values
         if not from_downlink:
+
             self.ui_manager.update_variable("targetTankLevel", target_tank_level)
             self.ui_manager.update_variable("pumpState", pump_running)
 
