@@ -239,7 +239,7 @@ class target(ProcessorBase):
             ])
 
         ## Recompute the UI values
-        self.on_uplink(from_downlink=True)
+        self.on_uplink()
 
 
     def on_uplink(self):
