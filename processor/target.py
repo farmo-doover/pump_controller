@@ -116,7 +116,7 @@ class target(ProcessorBase):
 
     def set_pump_state(self, state):
         logging.info(f"Setting pump state to: {state}")
-        # self.ui_manager.coerce_command("_pumpState", state)
+        self.ui_manager.coerce_command("_pumpState", state)
         ## Update the 'startStopNow' button
         ss_button = self.ui_manager.get_interaction("startStopNow")
         if state:
@@ -229,6 +229,8 @@ class target(ProcessorBase):
                     self.set_pump_state(True)
                 elif pump_mode == PumpMode.OFF:
                     self.set_pump_state(False)
+                else:
+                    self.set_pump_state(self.ui_manager.get_command("_pumpState"))
 
         ## If trigger message is not from the owner_agent, set the pending command warning
         if self.message and self.message.agent_id != self.agent_id:
