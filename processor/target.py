@@ -126,6 +126,7 @@ class target(ProcessorBase):
         else:
             ss_button.display_name = "Start Now"
             ss_button.colour = "green"
+        logging.info(f" updated SS button: {ss_button}")
         self.ui_manager.update_interaction("startStopNow", ss_button)
 
     def get_warning_indicator(self):
