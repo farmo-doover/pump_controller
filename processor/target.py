@@ -188,7 +188,9 @@ class target(ProcessorBase):
 
         logging.info(f"checking that startButton has been pressed: {self.ui_manager.get_command('startStopNow').current_value}")
         ## Handle a pending start/stop pump command from the UI
+        button_pressed = False
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
+            button_pressed = True
             ## Get the current pump state
             pump_state = self.get_pump_state()
             ## Get the current pump mode command
@@ -214,17 +216,19 @@ class target(ProcessorBase):
             
             # ## Clear the pending command
             self.ui_manager.coerce_command("startStopNow", None)
+            button_pressed = True
 
         ## Handle an update of the pump state from the UI
-        pump_mode = self.get_pump_mode()
-        logging.info(f"Pump mode: {pump_mode}") 
-        if pump_mode:
-            result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
-            logging.info(f"Result of setting pump mode: {result}")
-            if pump_mode == PumpMode.ON:
-                self.set_pump_state(True)
-            elif pump_mode == PumpMode.OFF:
-                self.set_pump_state(False)
+        if not button_pressed:
+            pump_mode = self.get_pump_mode()
+            logging.info(f"Pump mode: {pump_mode}") 
+            if pump_mode:
+                result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
+                logging.info(f"Result of setting pump mode: {result}")
+                if pump_mode == PumpMode.ON:
+                    self.set_pump_state(True)
+                elif pump_mode == PumpMode.OFF:
+                    self.set_pump_state(False)
 
         ## If trigger message is not from the owner_agent, set the pending command warning
         if self.message and self.message.agent_id != self.agent_id:
