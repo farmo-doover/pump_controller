@@ -119,6 +119,7 @@ class target(ProcessorBase):
         # self.ui_manager.coerce_command("_pumpState", state)
         ## Update the 'startStopNow' button
         ss_button = self.ui_manager.get_interaction("startStopNow")
+        logging.info(f"SS button: {ss_button}")
         if state:
             ss_button.display_name = "Stop Now"
             ss_button.colour = "red" 
@@ -195,18 +196,13 @@ class target(ProcessorBase):
             ## Get the current pump mode command
             pump_mode = self.get_pump_mode()
 
-            logging.info("--------------------------------")
-            logging.info(f"Pump state: {pump_state}")
-            logging.info(f"Pump mode: {pump_mode}")
-            logging.info("--------------------------------")
-
             if pump_state:
                 result = self.get_pump_controller_obj().stop_pump()
                 logging.info(f"Result of stopping pump: {result}")
                 if pump_mode == PumpMode.ON:
                     ## Coerce the pump state to off
                     self.ui_manager.coerce_command("pumpMode", PumpMode.OFF)
-                self.set_pump_state(False)
+                # self.set_pump_state(False)
             else:
                 result = self.get_pump_controller_obj().start_pump()
                 logging.info(f"Result of starting pump: {result}")
