@@ -217,10 +217,10 @@ class target(ProcessorBase):
         if pump_mode:
             result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
             logging.info(f"Result of setting pump mode: {result}")
-            # if pump_mode == PumpMode.ON:
-            #     self.set_pump_state(True)
-            # elif pump_mode == PumpMode.OFF:
-            #     self.set_pump_state(False)
+            if pump_mode == PumpMode.ON:
+                self.set_pump_state(True)
+            elif pump_mode == PumpMode.OFF:
+                self.set_pump_state(False)
 
         ## If trigger message is not from the owner_agent, set the pending command warning
         if self.message and self.message.agent_id != self.agent_id:
