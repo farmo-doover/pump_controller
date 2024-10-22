@@ -119,14 +119,12 @@ class target(ProcessorBase):
         # self.ui_manager.coerce_command("_pumpState", state)
         ## Update the 'startStopNow' button
         ss_button = self.ui_manager.get_interaction("startStopNow")
-        logging.info(f"SS button: {ss_button.__dict__}")
         if state:
             ss_button.display_name = "Stop Now"
             ss_button.colour = "red" 
         else:
             ss_button.display_name = "Start Now"
             ss_button.colour = "green"
-        logging.info(f" updated SS button: {ss_button.__dict__}")
         self.ui_manager.update_interaction("startStopNow", ss_button)
 
     def get_warning_indicator(self):
@@ -166,10 +164,8 @@ class target(ProcessorBase):
         ## Get the current pump mode command
         pump_mode = self.get_pump_mode()
 
-        logging.info("--------------------------------")
         logging.info(f"Pump state: {pump_state}")
         logging.info(f"Pump mode: {pump_mode}")
-        logging.info("--------------------------------")
 
         ## Handle an update of the target tank sensor from the UI
         tank_sensor_obj = self.get_tank_sensor_obj()
@@ -190,6 +186,7 @@ class target(ProcessorBase):
             result = tank_sensor_obj.set_tank_threshold(tank_level_triggers[0], tank_level_triggers[1])
             logging.info(f"Result of setting tank thresholds: {result}")
 
+        logging.info(f"checking that startButton has been pressed: {self.ui_manager.get_command('startStopNow')}")
         ## Handle a pending start/stop pump command from the UI
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
             ## Get the current pump state
