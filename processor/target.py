@@ -286,8 +286,9 @@ class target(ProcessorBase):
             logging.info(f"Tank level: {target_tank_level}")
 
         ## Update the UI Values
-        self.ui_manager.update_variable("targetTankLevel", target_tank_level)
-        self.ui_manager.update_variable("pumpState", pump_running)
+        if not from_downlink:
+            self.ui_manager.update_variable("targetTankLevel", target_tank_level)
+            self.ui_manager.update_variable("pumpState", pump_running)
 
         self.update_imei()
 
