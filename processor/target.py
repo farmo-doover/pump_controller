@@ -259,6 +259,12 @@ class target(ProcessorBase):
         save_log_required = True
 
         # Run any uplink processing code here
+        logging.info(f"================================================")
+        logging.info(f"self.message: {self.message}")
+        logging.info(f"self.message.id: {self.message.id}")
+        logging.info(f"self.message.channel_name: {self.message.channel_name}")
+        logging.info(f"self.uplink_channel_name: {self.uplink_channel_name}")
+        logging.info(f"================================================")
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
             
             logging.info("No trigger message passed - fetching last message")
