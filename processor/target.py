@@ -119,14 +119,14 @@ class target(ProcessorBase):
         # self.ui_manager.coerce_command("_pumpState", state)
         ## Update the 'startStopNow' button
         ss_button = self.ui_manager.get_interaction("startStopNow")
-        logging.info(f"SS button: {ss_button}")
+        logging.info(f"SS button: {ss_button.keys()}")
         if state:
             ss_button.display_name = "Stop Now"
             ss_button.colour = "red" 
         else:
             ss_button.display_name = "Start Now"
             ss_button.colour = "green"
-        logging.info(f" updated SS button: {ss_button}")
+        logging.info(f" updated SS button: {ss_button.keys()}")
         self.ui_manager.update_interaction("startStopNow", ss_button)
 
     def get_warning_indicator(self):
