@@ -194,6 +194,9 @@ class target(ProcessorBase):
             ## Get the current pump mode command
             pump_mode = self.get_pump_mode()
 
+            logging.info(f"Pump state: {pump_state}")
+            logging.info(f"Pump mode: {pump_mode}")
+
             if pump_state:
                 result = self.get_pump_controller_obj().stop_pump()
                 logging.info(f"Result of stopping pump: {result}")
