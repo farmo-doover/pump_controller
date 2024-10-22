@@ -284,7 +284,7 @@ class target(ProcessorBase):
            return
         
         ## Get the pump state
-        if not save_log_required:
+        if save_log_required:
             pump_running = None
             if "message" in raw_message:
                 pump_running = raw_message["message"].get("switch_state")
@@ -302,7 +302,7 @@ class target(ProcessorBase):
             logging.info(f"Tank level: {target_tank_level}")
 
         ## Update the UI Values
-        if not save_log_required:
+        if save_log_required:
 
             self.ui_manager.update_variable("targetTankLevel", target_tank_level)
             self.ui_manager.update_variable("pumpState", pump_running)
