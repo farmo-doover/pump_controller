@@ -214,6 +214,7 @@ class target(ProcessorBase):
 
         ## Handle an update of the pump state from the UI
         pump_mode = self.get_pump_mode()
+        logging.info(f"Pump mode: {pump_mode}") 
         if pump_mode:
             result = self.get_pump_controller_obj().set_pump_mode(pump_mode)
             logging.info(f"Result of setting pump mode: {result}")
