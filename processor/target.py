@@ -116,7 +116,7 @@ class target(ProcessorBase):
 
     def set_pump_state(self, state):
         logging.info(f"Setting pump state to: {state}")
-        self.ui_manager.coerce_command("_pumpState", state)
+        # self.ui_manager.coerce_command("_pumpState", state)
         ## Update the 'startStopNow' button
         ss_button = self.ui_manager.get_interaction("startStopNow")
         if state:
