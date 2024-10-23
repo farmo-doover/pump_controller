@@ -208,11 +208,11 @@ class UIManager:
         def update_elements_from_ui_state(d):
             for k, v in d.items():
                 if isinstance(v, dict):
-                    update_elements_from_ui_state(v)
-                else:
                     element = self.get_element(k)
                     if element is not None:
                         element.recv_ui_state_update(v)
+                    else:
+                        update_elements_from_ui_state(v)
 
         update_elements_from_ui_state(payload)
 
