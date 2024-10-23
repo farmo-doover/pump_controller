@@ -322,7 +322,7 @@ class target(ProcessorBase):
         else:
             logging.info(f"save_log_required is false; This event was not caused by an uplink")
             logging.info(f"message that caused this event: {callerMessage}")
-            logging.info(f"hoping that this works {callerMessage.fetch_payload()}")
+            logging.info(f"hoping that this works {callerMessage.payload}")
             if callerMessage.fetch_payload()
             # self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
