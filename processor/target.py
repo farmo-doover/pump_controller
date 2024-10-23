@@ -326,8 +326,11 @@ class target(ProcessorBase):
             if callerMessage.fetch_payload():
                 callerPayload = callerMessage.fetch_payload()
                 logging.info(f"callerPayload is {callerPayload}")
-                if "cmds" in callerPayload and "startStopNow" in callerPayload["cmds"]:
-                    if callerMessage.fetch_payload()["cmds"]["startStopNow"] is None:
+                if "cmds" in callerPayload:
+                    if "startStopNow" in callerPayload["cmds"]:
+                        if callerMessage.fetch_payload()["cmds"]["startStopNow"] is None:
+                            self.ui_manager.update_variable("pumpState", self.get_pump_state())
+                    elif "_pumpState" in callerPayload["cmds"]:
                         self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
         self.update_imei()
