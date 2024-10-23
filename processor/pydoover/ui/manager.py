@@ -203,7 +203,19 @@ class UIManager:
         # if self._base_container is not None:
         #     self._base_container.from_dict(payload)
 
-        return payload
+        ## Iterate through the payload and update anything that needs updating
+        # define a function to recursively trawl through each element of the last ui state and allow the element to update itself
+        def update_elements_from_ui_state(d):
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    update_elements_from_ui_state(v)
+                else:
+                    element = self.get_element(k)
+                    if element is not None:
+                        element.recv_ui_state_update(v)
+
+        update_elements_from_ui_state(payload)
+
 
     def _add_interaction(self, interaction: Interaction):
         name = interaction.name.strip()
@@ -259,7 +271,6 @@ class UIManager:
             return None
         
     def update_interaction(self, name: str, updated: Interaction) -> bool:
-        logging.info(f'updating an interaction with name {name} and {Interaction.__dict__}')
         if name not in self._interactions:
             return False
         
@@ -287,7 +298,6 @@ class UIManager:
         return find_object_with_key(self.last_ui_state, element_name)
 
     def update_variable(self, variable_name: str, value: Any, critical: bool = False) -> bool:
-        logging.info(f"updating ui variable: {variable_name} with the value {value}")
         element = self._base_container.get_element(variable_name)
         if not (element and isinstance(element, Variable)):
             return False

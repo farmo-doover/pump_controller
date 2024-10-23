@@ -6,6 +6,9 @@ from .element import Element
 from .misc import Range, Widget
 
 
+class NotSet:
+    pass
+
 class Variable(Element):
     type = "uiVariable"
 
@@ -14,7 +17,7 @@ class Variable(Element):
         name: str,
         display_name: str,
         var_type: str,
-        curr_val: Any = None,
+        curr_val: Any = NotSet,
         precision: int = None,
         ranges: list[Union[Range, dict]] = None,
         earliest_data_time: Optional[datetime] = None,
@@ -24,7 +27,7 @@ class Variable(Element):
         super().__init__(name, display_name, **kwargs)
 
         self.var_type = var_type
-        self.curr_val = self._curr_val = curr_val
+        self._curr_val = curr_val
         self.precision = precision or kwargs.pop("dec_precision", None)
         self.earliest_data_time = earliest_data_time
 
@@ -55,6 +58,8 @@ class Variable(Element):
 
     @property
     def current_value(self):
+        if self._curr_val is NotSet:
+            return None
         return self._curr_val
 
     @current_value.setter
@@ -66,6 +71,10 @@ class Variable(Element):
             self._curr_val = round(new_value, self.precision)
         else:
             self._curr_val = new_value
+
+    def recv_ui_state_update(self, state: dict[str, Any]) -> None:
+        if self._curr_val is NotSet and "currentValue" in state:
+            self.current_value = state["currentValue"]
 
     def add_ranges(self, *range_val: Range):
         for r in range_val:

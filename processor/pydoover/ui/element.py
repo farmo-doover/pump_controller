@@ -67,6 +67,10 @@ class Element:
 
         return result
 
+    ## A stub for the method that will be called when the UI state is updated.
+    # The element can choose to update its internal state based on the previous state and the new state.
+    def recv_ui_state_update(self, state: dict[str, Any]) -> None:
+        pass
 
 class ConnectionType(enum.Enum):
     constant = "constant"

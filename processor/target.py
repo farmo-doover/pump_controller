@@ -269,9 +269,10 @@ class target(ProcessorBase):
         save_log_required = True
 
         # Run any uplink processing code here
-        logging.info(f"==========message info==========")
-        logging.info(f"self.message: {self.message.channel_name}")
-        logging.info(f"==========message info==========")
+        if self.message and self.message.channel_name:
+            logging.info("==========message info==========")
+            logging.info(f"self.message: {self.message.channel_name}")
+            logging.info("==========message info==========")
 
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
             
