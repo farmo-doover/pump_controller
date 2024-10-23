@@ -220,6 +220,10 @@ class target(ProcessorBase):
             else:
                 logging.info(f"current pump state is unknown, calling set_pump_state to: {not self.ui_manager.get_command('_pumpState').current_value}")
                 self.set_pump_state(not self.ui_manager.get_command('_pumpState').current_value)
+                if pump_mode == PumpMode.ON:
+                    self.ui_manager.coerce_command("pumpMode", PumpMode.OFF)
+                if pump_mode == PumpMode.OFF:
+                    self.ui_manager.coerce_command("pumpMode", PumpMode.ON)
             
             # ## Clear the pending command
             self.ui_manager.coerce_command("startStopNow", None)
