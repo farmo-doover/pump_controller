@@ -315,6 +315,8 @@ class target(ProcessorBase):
             logging.info(f"updating pumpState in ui_state to {pump_running}")
             if "cmds" not in raw_message:
                 self.ui_manager.update_variable("pumpState", pump_running)
+        else:
+            self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
         self.update_imei()
 
@@ -325,6 +327,7 @@ class target(ProcessorBase):
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
         ## Update the UI
+
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
 
 
