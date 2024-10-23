@@ -290,12 +290,13 @@ class target(ProcessorBase):
            logging.info("No payload found in message - skipping processing")
            return
         
+        logging.info(f"save_log_required is: {save_log_required}")
+
         ## Get the pump state
         if save_log_required:
             pump_running = None
             if "message" in raw_message:
                 pump_running = raw_message["message"].get("switch_state")
-                logging.info(f"raw message: {raw_message}")
                 logging.info(f"Pump state: {pump_running}")
                 if pump_running is not None:
                     pump_running = bool(pump_running)
@@ -312,6 +313,7 @@ class target(ProcessorBase):
         if save_log_required:
 
             self.ui_manager.update_variable("targetTankLevel", target_tank_level)
+            logging.info(f"updating pumpState in ui_state to {pump_running}")
             self.ui_manager.update_variable("pumpState", pump_running)
 
         self.update_imei()
@@ -319,7 +321,7 @@ class target(ProcessorBase):
         ## If this is an update from the uplink channel, clear any pending commands
         if save_log_required:
             ## Clear the pending command
-            self.ui_manager.coerce_command("startStopNow", None)
+            # self.ui_manager.coerce_command("startStopNow", None)
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
         ## Update the UI
