@@ -254,6 +254,8 @@ class target(ProcessorBase):
 
     def on_uplink(self):
 
+        logging.info("============UPLINK BEGIN============")
+
         ## Example uplink message
         # {
         #     "unitID": "354513596466486",
@@ -275,6 +277,7 @@ class target(ProcessorBase):
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
             
             logging.info("No trigger message passed - fetching last message")
+            callerMessage = self.message
             self.message = self.uplink_channel.last_message
 
             if not self.message:
@@ -312,9 +315,12 @@ class target(ProcessorBase):
         if save_log_required:
 
             self.ui_manager.update_variable("targetTankLevel", target_tank_level)
-            logging.info(f"updating pumpState in ui_state to {pump_running}")
+            
             if "cmds" not in raw_message:
+                logging.info(f"updating pumpState in ui_state to {pump_running}")
                 self.ui_manager.update_variable("pumpState", pump_running)
+            else:
+                logging.info(f"turns out cmds was in the raw_message")
         else:
             self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
