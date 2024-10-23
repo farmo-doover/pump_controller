@@ -322,7 +322,7 @@ class target(ProcessorBase):
         else:
             logging.info(f"save_log_required is false; This event was not caused by an uplink")
             logging.info(f"message that caused this event: {callerMessage}")
-            self.ui_manager.update_variable("pumpState", self.get_pump_state())
+            # self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
         self.update_imei()
 
