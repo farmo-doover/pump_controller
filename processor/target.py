@@ -299,7 +299,7 @@ class target(ProcessorBase):
                 if pump_running is not None:
                     pump_running = bool(pump_running)
                     self.set_pump_state(pump_running)
-        logging.info(f"Value of pump_running: {pump_running}")
+            logging.info(f"Value of pump_running: {pump_running}")
 
         ## Get the tank level
         target_tank_level = None
