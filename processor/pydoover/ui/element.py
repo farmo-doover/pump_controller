@@ -193,7 +193,8 @@ class Multiplot(Element):
         result['series'] = self.series
         result['colours'] = self.series_colours
         result['activeSeries'] = self.series_active
-        result['title'] = self.title
+        if self.title:
+            result['title'] = self.title
 
         if self.earliest_data_time is not None:
             if isinstance(self.earliest_data_time, datetime):
