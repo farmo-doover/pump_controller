@@ -177,7 +177,7 @@ class Multiplot(Element):
     def __init__(
         self, name: str, display_name: str, series: list[str],
         series_colours: list[Colour], series_active: list[bool], 
-        earliest_data_time: Optional[datetime] = None,
+        earliest_data_time: Optional[datetime] = None, title: Optional[str] = None,
         **kwargs
     ):
         super().__init__(name, display_name, **kwargs)
@@ -186,12 +186,14 @@ class Multiplot(Element):
         self.series_colours = series_colours
         self.series_active = series_active
         self.earliest_data_time = earliest_data_time
+        self.title = title
 
     def to_dict(self):
         result = super().to_dict()
         result['series'] = self.series
         result['colours'] = self.series_colours
         result['activeSeries'] = self.series_active
+        result['title'] = self.title
 
         if self.earliest_data_time is not None:
             if isinstance(self.earliest_data_time, datetime):

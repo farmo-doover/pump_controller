@@ -117,6 +117,7 @@ def create_multiplot():
         series=overview_plot_series,
         series_colours=overview_plot_colours,
         series_active=overview_plot_active,
+        title="Pump information over time"
     )
 
     return multiplot
