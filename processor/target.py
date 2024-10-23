@@ -203,20 +203,23 @@ class target(ProcessorBase):
             logging.info(f"Pump state: {pump_state}")
             logging.info(f"Pump mode: {pump_mode}")
 
-            if pump_state:
+            if pump_state and pump_state == True:
                 result = self.get_pump_controller_obj().stop_pump()
                 logging.info(f"Result of stopping pump: {result}")
                 if pump_mode == PumpMode.ON:
                     ## Coerce the pump state to off
                     self.ui_manager.coerce_command("pumpMode", PumpMode.OFF)
                 self.set_pump_state(False)
-            else:
+            elif pump_state == False:
                 result = self.get_pump_controller_obj().start_pump()
                 logging.info(f"Result of starting pump: {result}")
                 if pump_mode == PumpMode.OFF:
                     ## Coerce the pump state to on
                     self.ui_manager.coerce_command("pumpMode", PumpMode.ON)
                 self.set_pump_state(True)
+            else:
+                logging.inf(f"current pump state is unknown, calling set_pump_state to: {!self.ui_manager.get_command('_pumpState').current_value}")
+                self.set_pump_state(!self.ui_manager.get_command('_pumpState').current_value)
             
             # ## Clear the pending command
             self.ui_manager.coerce_command("startStopNow", None)
