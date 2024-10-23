@@ -323,16 +323,14 @@ class target(ProcessorBase):
             logging.info(f"save_log_required is false; This event was not caused by an uplink")
             logging.info(f"message that caused this event: {callerMessage}")
             
-            if callerMessage.fetch_payload():
-                logging.info(f"hoping that this works {callerMessage.fetch_payload()}")
-            # self.ui_manager.update_variable("pumpState", self.get_pump_state())
+            if callerMessage.fetch_payload() and callerMessage.fetch_payload().cmds and callerMessage.fetch_payload().cmds.startStopNow:
+                if callerMessage.fetch_payload().cmds.startStopNow == None:
+                    self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
         self.update_imei()
 
         ## If this is an update from the uplink channel, clear any pending commands
         if save_log_required:
-            ## Clear the pending command
-            # self.ui_manager.coerce_command("startStopNow", None)
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
