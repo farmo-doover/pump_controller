@@ -287,6 +287,7 @@ class UIManager:
         return find_object_with_key(self.last_ui_state, element_name)
 
     def update_variable(self, variable_name: str, value: Any, critical: bool = False) -> bool:
+        logging.info(f"updating ui variable: {variable_name} with the value {value}")
         element = self._base_container.get_element(variable_name)
         if not (element and isinstance(element, Variable)):
             return False
