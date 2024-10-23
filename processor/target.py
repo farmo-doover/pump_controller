@@ -192,9 +192,7 @@ class target(ProcessorBase):
 
         logging.info(f"checking that startButton has been pressed: {self.ui_manager.get_command('startStopNow').current_value}")
         ## Handle a pending start/stop pump command from the UI
-        button_pressed = False
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
-            button_pressed = True
             ## Get the current pump state
             pump_state = self.get_pump_state()
             ## Get the current pump mode command
@@ -226,11 +224,10 @@ class target(ProcessorBase):
                     self.ui_manager.coerce_command("pumpMode", PumpMode.ON)
             
             # ## Clear the pending command
-            self.ui_manager.coerce_command("startStopNow", None)
-            button_pressed = True
+            # self.ui_manager.coerce_command("startStopNow", None)
 
         ## Handle an update of the pump state from the UI
-        if not button_pressed:
+        else:
             pump_mode = self.get_pump_mode()
             logging.info(f"Pump mode: {pump_mode}") 
             if pump_mode:
@@ -272,6 +269,10 @@ class target(ProcessorBase):
         save_log_required = True
 
         # Run any uplink processing code here
+        logging.info(f"==========message info==========")
+        logging.info(f"self.message: {self.message.channel_name}")
+        logging.info(f"==========message info==========")
+
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
             
             logging.info("No trigger message passed - fetching last message")
@@ -326,6 +327,10 @@ class target(ProcessorBase):
             # self.ui_manager.coerce_command("startStopNow", None)
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
+        if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
+            self.ui_manager.coerce_command("startStopNow", None)
+        else
+            self.ui_manager.update_variable("pumpState", None)
         ## Update the UI
 
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
