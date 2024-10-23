@@ -268,6 +268,9 @@ class target(ProcessorBase):
 
         save_log_required = True
 
+        if self.message and self.message.channel_name:
+            logging.info(f"self.message.channel_name: {self.message.channel_name}")
+
         # Run any uplink processing code here
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
             
@@ -325,7 +328,7 @@ class target(ProcessorBase):
 
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
             self.ui_manager.coerce_command("startStopNow", None)
-        else
+        else:
             self.ui_manager.update_variable("pumpState", None)
         ## Update the UI
 
