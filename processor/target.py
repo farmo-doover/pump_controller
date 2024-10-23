@@ -316,12 +316,12 @@ class target(ProcessorBase):
 
             self.ui_manager.update_variable("targetTankLevel", target_tank_level)
             
-            if "cmds" not in raw_message:
-                logging.info(f"updating pumpState in ui_state to {pump_running}")
-                self.ui_manager.update_variable("pumpState", pump_running)
-            else:
-                logging.info(f"turns out cmds was in the raw_message")
+            logging.info(f"updating pumpState in ui_state to {pump_running}")
+            self.ui_manager.update_variable("pumpState", pump_running)
+
         else:
+            logging.info(f"save_log_required is false; This event was not caused by an uplink")
+            logging.info(f"message that caused this event: {callerMessage}")
             self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
         self.update_imei()
