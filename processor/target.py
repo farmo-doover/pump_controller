@@ -323,11 +323,11 @@ class target(ProcessorBase):
             logging.info(f"save_log_required is false; This event was not caused by an uplink")
             logging.info(f"message that caused this event: {callerMessage}")
             
-            if callerMessage.fetch_payload() 
+            if callerMessage.fetch_payload():
                 callerPayload = callerMessage.fetch_payload()
                 logging.info(f"callerPayload is {callerPayload}")
-                if "cmds" in callerPayload and "startStopNow" in callerPayload.cmds:
-                    if callerMessage.fetch_payload().cmds.startStopNow == None:
+                if "cmds" in callerPayload and "startStopNow" in callerPayload["cmds"]:
+                    if callerMessage.fetch_payload()["cmds"]["startStopNow"] is None:
                         self.ui_manager.update_variable("pumpState", self.get_pump_state())
 
         self.update_imei()
