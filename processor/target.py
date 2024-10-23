@@ -318,7 +318,7 @@ class target(ProcessorBase):
             
             if "cmds" not in raw_message:
                 logging.info(f"updating pumpState in ui_state to {pump_running}")
-                # self.ui_manager.update_variable("pumpState", pump_running)
+                self.ui_manager.update_variable("pumpState", pump_running)
             else:
                 logging.info(f"turns out cmds was in the raw_message")
         else:
