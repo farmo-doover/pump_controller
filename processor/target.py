@@ -284,7 +284,7 @@ class target(ProcessorBase):
             save_log_required = False ## We don't want to show the device updating if we are just fetching the last message
 
         logging.info(f"save_log_required is: {save_log_required}")
-        
+
         raw_message = self.message.fetch_payload()
         logging.info(f"Raw message: {raw_message}")
         if raw_message is None:
@@ -296,10 +296,10 @@ class target(ProcessorBase):
             pump_running = None
             if "message" in raw_message:
                 pump_running = raw_message["message"].get("switch_state")
-                logging.info(f"Pump state: {pump_running}")
                 if pump_running is not None:
                     pump_running = bool(pump_running)
                     self.set_pump_state(pump_running)
+        logging.info(f"Value of pump_running: {pump_running}")
 
         ## Get the tank level
         target_tank_level = None
@@ -313,7 +313,8 @@ class target(ProcessorBase):
 
             self.ui_manager.update_variable("targetTankLevel", target_tank_level)
             logging.info(f"updating pumpState in ui_state to {pump_running}")
-            self.ui_manager.update_variable("pumpState", pump_running)
+            if "cmds" not in raw_message:
+                self.ui_manager.update_variable("pumpState", pump_running)
 
         self.update_imei()
 
