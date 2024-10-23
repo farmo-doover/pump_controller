@@ -334,8 +334,6 @@ class target(ProcessorBase):
 
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
             self.ui_manager.coerce_command("startStopNow", None)
-        else:
-            self.ui_manager.update_variable("pumpState", None)
         ## Update the UI
 
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
