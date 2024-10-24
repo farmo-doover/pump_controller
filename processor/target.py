@@ -339,8 +339,8 @@ class target(ProcessorBase):
         if save_log_required:
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
-        if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
-            self.ui_manager.coerce_command("startStopNow", None)
+            if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
+                self.ui_manager.coerce_command("startStopNow", None)
         ## Update the UI
 
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
