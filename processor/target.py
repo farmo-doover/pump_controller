@@ -236,6 +236,13 @@ class target(ProcessorBase):
                 else:
                     self.set_pump_state(self.ui_manager.get_command("_pumpState").current_value)
 
+        logging.info("====================================================")
+        logging.info("this is where we would add the warning indicator")
+        logging.info("self.message: {self.message}")
+        logging.info("self.agent_id: {self.agent_id}")
+        logging.info("self.message.agent_id: {self.message.agent_id}")
+        logging.info("====================================================")
+
         ## If trigger message is not from the owner_agent, set the pending command warning
         if self.message and self.message.agent_id != self.agent_id:
             ## Add a warning to show that a pending command is in progress
