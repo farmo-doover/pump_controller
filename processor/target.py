@@ -142,8 +142,8 @@ class target(ProcessorBase):
         elif message_type == "DOWNLINK":
             self.on_downlink()
         elif message_type == "UPLINK":
-            # self.on_uplink()
-            self.on_downlink()
+            self.on_uplink()
+            # self.on_downlink()
         elif message_type == "SCHEDULE_UPDATE":
             self.on_schedule_update()
 
@@ -249,7 +249,7 @@ class target(ProcessorBase):
             ])
 
         ## Recompute the UI values
-        self.on_uplink()
+        # self.on_uplink()
 
 
     def on_uplink(self):
