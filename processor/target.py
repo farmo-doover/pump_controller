@@ -294,6 +294,16 @@ class target(ProcessorBase):
 
             save_log_required = False ## We don't want to show the device updating if we are just fetching the last message
 
+            if callerMessage.fetch_payload():
+                callerPayload = callerMessage.fetch_payload()
+                logging.info(f"callerPayload is {callerPayload}")
+                if "cmds" in callerPayload:
+                    if "_pumpState" in callerPayload["cmds"]:
+                        logging.info("adding warning indicator")
+                        self.ui_manager.add_children([
+                            self.get_warning_indicator()
+                        ])
+                        
         logging.info(f"save_log_required is: {save_log_required}")
 
         raw_message = self.message.fetch_payload()
@@ -356,16 +366,6 @@ class target(ProcessorBase):
             self.ui_manager.add_children([
                 self.get_warning_indicator()
             ])
-
-        if callerMessage.fetch_payload():
-            callerPayload = callerMessage.fetch_payload()
-            logging.info(f"callerPayload is {callerPayload}")
-            if "cmds" in callerPayload:
-                if "_pumpState" in callerPayload["cmds"]:
-                    logging.info("adding warning indicator")
-                    self.ui_manager.add_children([
-                        self.get_warning_indicator()
-                    ])
 
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
 
