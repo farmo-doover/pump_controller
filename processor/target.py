@@ -242,9 +242,9 @@ class target(ProcessorBase):
 
         logging.info("====================================================")
         logging.info("this is where we would add the warning indicator")
-        logging.info("self.message: {self.message}")
-        logging.info("self.agent_id: {self.agent_id}")
-        logging.info("self.message.agent_id: {self.message.agent_id}")
+        logging.info(f"self.message: {self.message}")
+        logging.info(f"self.agent_id: {self.agent_id}")
+        logging.info(f"self.message.agent_id: {self.message.agent_id}")
         logging.info("====================================================")
 
         ## If trigger message is not from the owner_agent, set the pending command warning
@@ -356,6 +356,16 @@ class target(ProcessorBase):
             self.ui_manager.add_children([
                 self.get_warning_indicator()
             ])
+
+        if callerMessage.fetch_payload():
+            callerPayload = callerMessage.fetch_payload()
+            logging.info(f"callerPayload is {callerPayload}")
+            if "cmds" in callerPayload:
+                if "_pumpState" in callerPayload["cmds"]:
+                    logging.info("adding warning indicator")
+                    self.ui_manager.add_children([
+                        self.get_warning_indicator()
+                    ])
 
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
 
