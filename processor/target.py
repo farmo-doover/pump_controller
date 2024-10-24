@@ -275,6 +275,8 @@ class target(ProcessorBase):
         if self.message and self.message.channel_name:
             logging.info(f"self.message.channel_name: {self.message.channel_name}")
 
+        logging.info(f"Raw message: {raw_message}")
+
         # Run any uplink processing code here
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
             
@@ -291,7 +293,7 @@ class target(ProcessorBase):
         logging.info(f"save_log_required is: {save_log_required}")
 
         raw_message = self.message.fetch_payload()
-        logging.info(f"Raw message: {raw_message}")
+
         if raw_message is None:
            logging.info("No payload found in message - skipping processing")
            return
