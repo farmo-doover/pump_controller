@@ -240,6 +240,7 @@ class target(ProcessorBase):
         if self.message and self.message.agent_id != self.agent_id:
             ## Add a warning to show that a pending command is in progress
             ## This can be removed once the command has been processed
+            logging.info("adding warning indicator")
             self.ui_manager.add_children([
                 self.get_warning_indicator()
             ])
@@ -294,6 +295,8 @@ class target(ProcessorBase):
             if "message" in raw_message:
                 pump_running = raw_message["message"].get("switch_state")
                 if pump_running is not None:
+                    if pump_running == '0':
+                        pump_running = False
                     pump_running = bool(pump_running)
                     self.set_pump_state(pump_running)
             logging.info(f"Value of pump_running: {pump_running}")
@@ -331,6 +334,7 @@ class target(ProcessorBase):
 
         ## If this is an update from the uplink channel, clear any pending commands
         if save_log_required:
+            logging.info("removing warning indicator")
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
             if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
