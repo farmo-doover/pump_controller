@@ -249,7 +249,7 @@ class target(ProcessorBase):
             ])
 
         ## Recompute the UI values
-        # self.on_uplink()
+        self.on_uplink()
 
 
     def on_uplink(self):
@@ -322,7 +322,7 @@ class target(ProcessorBase):
         else:
             logging.info(f"save_log_required is false; This event was not caused by an uplink")
             logging.info(f"message that caused this event: {callerMessage}")
-            # self.ui_manager.update_variable("pumpState", self.get_pump_state())
+            
             if callerMessage.fetch_payload():
                 callerPayload = callerMessage.fetch_payload()
                 logging.info(f"callerPayload is {callerPayload}")
@@ -340,7 +340,6 @@ class target(ProcessorBase):
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
-            logging.info(f"button was pushed. Reseting startStopNow in ui_cmds back to none")
             self.ui_manager.coerce_command("startStopNow", None)
         ## Update the UI
 
