@@ -350,14 +350,13 @@ class target(ProcessorBase):
             logging.info("removing warning indicator")
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
-            if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
-                self.ui_manager.coerce_command("startStopNow", None)
-        ## Update the UI
-        else:
+        if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
+            self.ui_manager.coerce_command("startStopNow", None)
             logging.info("adding warning indicator")
             self.ui_manager.add_children([
                 self.get_warning_indicator()
             ])
+
         self.ui_manager.push(record_log=save_log_required, even_if_empty=True)
 
 
