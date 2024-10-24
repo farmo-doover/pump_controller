@@ -275,7 +275,7 @@ class target(ProcessorBase):
         if self.message and self.message.channel_name:
             logging.info(f"self.message.channel_name: {self.message.channel_name}")
 
-        logging.info(f"Raw message: {raw_message}")
+        logging.info(f"Raw message: {self.message.fetch_payload()}")
 
         # Run any uplink processing code here
         if not (self.message and self.message.id) or not (self.message.channel_name == self.uplink_channel_name):
