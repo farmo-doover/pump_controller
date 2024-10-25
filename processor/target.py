@@ -303,7 +303,7 @@ class target(ProcessorBase):
                         self.ui_manager.add_children([
                             self.get_warning_indicator()
                         ])
-                        
+
         logging.info(f"save_log_required is: {save_log_required}")
 
         raw_message = self.message.fetch_payload()
@@ -338,6 +338,8 @@ class target(ProcessorBase):
             
             logging.info(f"updating pumpState in ui_state to {pump_running}")
             self.ui_manager.update_variable("pumpState", pump_running)
+            if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
+                self.ui_manager.coerce_command("startStopNow", None)
 
         else:
             logging.info(f"save_log_required is false; This event was not caused by an uplink")
@@ -361,7 +363,6 @@ class target(ProcessorBase):
             self.ui_manager.remove_children([self.get_warning_indicator()])
 
         if self.ui_manager.get_command("startStopNow") and self.ui_manager.get_command("startStopNow").current_value:
-            self.ui_manager.coerce_command("startStopNow", None)
             logging.info("adding warning indicator")
             self.ui_manager.add_children([
                 self.get_warning_indicator()
