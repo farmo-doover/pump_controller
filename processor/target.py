@@ -430,69 +430,69 @@ class target(ProcessorBase):
 
         for schedule in schedule_aggregate['schedules']:
 
-                if schedule["start_time"] <= current_time + 30:
-                    if schedule["frequency"] == "once":
-                        logging.info("shcedule is in the past and is a once off schedule - skipping") 
+            if schedule["start_time"] <= current_time + 30:
+                if schedule["frequency"] == "once":
+                    logging.info("schedule is in the past and is a once off schedule - skipping") 
+                    continue
+                    
+                elif schedule["frequency"] == "daily":
+                    rawdiff = current_time + 30 - schedule["start_time"]
+                    incdiff = ((rawdiff // (24 * 3600)) + 1) * 24 * 3600
+                    start_time = schedule["start_time"] + incdiff
+
+                elif schedule["frequency"] == "weekly":
+                    rawdiff = current_time + 30 - schedule["start_time"]
+                    incdiff = ((rawdiff // (24 * 3600 * 7)) + 1) * 24 * 3600 * 7
+                    start_time = schedule['start_time'] + incdiff
+
+                if start_time >= schedule["end_time"]:
+                    logging.info("schedule has expired - skipping")
+                    continue
+                
+                end_time = start_time + int(float(schedule["duration"]) * 3600)
+
+            else:
+                start_time = schedule["start_time"]
+                end_time = start_time + int(float(schedule["duration"]) * 3600)
+
+            if schedule["edited"] == 0:
+                new_item = {
+                    "imei":imei,
+                    "start_time":start_time,
+                    "end_time":end_time,
+                    "frequency":schedule["frequency"],
+                    "repeat_until":schedule["end_time"]
+                }
+                farmo_client.add_schedules(new_item)
+
+            else:
+                new_item = {
+                    "imei":imei,
+                    "timeslots":[]
+                }
+                for timeslot in schedule["timeslots"]:
+                    if timeslot["start_time"] <= current_time + 30:
+                        logging.info("timeslot is in the past - skipping")
                         continue
-                        
-                    elif schedule["frequency"] == "daily":
-                        rawdiff = current_time + 30 - schedule["start_time"]
-                        incdiff = ((rawdiff // (24 * 3600)) + 1) * 24 * 3600
-                        start_time = schedule["start_time"] + incdiff
+                    new_item["timeslots"].append({
+                        "start_time":timeslot["start_time"],
+                        "end_time":timeslot["end_time"],
+                    })
 
-                    elif schedule["frequency"] == "weekly":
-                        rawdiff = current_time + 30 - schedule["start_time"]
-                        incdiff = ((rawdiff // (24 * 3600 * 7)) + 1) * 24 * 3600 * 7
-                        start_time = schedule['start_time'] + incdiff
+                farmo_client.add_schedules_manual(new_item)
 
-                    if start_time >= schedule["end_time"]:
-                        logging.info("schedule has expired - skipping")
-                        continue
+            test = farmo_client.get_schedules(imei)
+            logging.info(f"Updated schedules: {test}")
+            test2 = farmo_client.get_timeslots(imei)
+            # logging.info(f"Page BREAK FOR EYES")
 
-                    end_time = start_time + (schedule["duration"] * 3600)
+            # schedule["edited"] == 1:
+            #     plainSlots = []
+            #     editSlots = []
+            #     for i in 
 
-                else:
-                    start_time = schedule["start_time"]
-                    end_time = start_time + (schedule["duration"] * 3600)
-
-                if schedule["edited"] == 0:
-                    new_item = {
-                        "imei":imei,
-                        "start_time":start_time,
-                        "end_time":end_time,
-                        "frequency":schedule["frequency"],
-                        "repeat_until":schedule["end_time"]
-                    }
-                    farmo_client.add_schedules(new_item)
-
-                else:
-                    new_item = {
-                        "imei":imei,
-                        "timeslots":[]
-                    }
-                    for timeslot in schedule["timeslots"]:
-                        if timeslot["start_time"] <= current_time + 30:
-                            logging.info("timeslot is in the past - skipping")
-                            continue
-                        new_item["timeslots"].append({
-                            "start_time":timeslot["start_time"],
-                            "end_time":timeslot["end_time"],
-                        })
-
-                    farmo_client.add_schedules_manual(new_item)
-
-                test = farmo_client.get_schedules(imei)
-                logging.info(f"Updated schedules: {test}")
-                test2 = farmo_client.get_timeslots(imei)
-                # logging.info(f"Page BREAK FOR EYES")
-
-                # schedule["edited"] == 1:
-                #     plainSlots = []
-                #     editSlots = []
-                #     for i in 
-
-                # logging.info(f"Timeslots: {farmo_client.get_timeslots(imei)}")
-                logging.info(f"Timeslots: {test2}")    
+            # logging.info(f"Timeslots: {farmo_client.get_timeslots(imei)}")
+            logging.info(f"Timeslots: {test2}")    
 
     def get_connection_period(self):
         return 60 * 5 ## 5 mins
