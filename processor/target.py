@@ -186,7 +186,6 @@ class target(ProcessorBase):
             tank_sensor_obj = self.get_tank_sensor_obj()
             if not tank_sensor_obj:
                 logging.warning("Tank sensor not found.")
-                return
             result = tank_sensor_obj.set_tank_threshold(tank_level_triggers[0], tank_level_triggers[1])
             logging.info(f"Result of setting tank thresholds: {result}")
 
