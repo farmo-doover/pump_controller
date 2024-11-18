@@ -482,7 +482,7 @@ class target(ProcessorBase):
                     "timeslots":[]
                 }
                 for timeslot in schedule["timeslots"]:
-                    if timeslot["start_time"] <= current_time + 30:
+                    if timeslot["end_time"] <= current_time + 30:
                         logging.info("timeslot is in the past - skipping")
                         continue
                     new_item["timeslots"].append({
