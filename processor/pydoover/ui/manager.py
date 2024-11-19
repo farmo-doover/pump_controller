@@ -6,7 +6,7 @@ import time
 import json
 from datetime import datetime
 
-from typing import Union, Any, Optional, TypeVar, TYPE_CHECKING
+from typing import Union, Any, Optional, TypeVar
 
 from .element import Element
 from .interaction import SlimCommand, Interaction, NotSet
@@ -16,10 +16,8 @@ from .variable import Variable
 from ..cloud.api import Client
 
 from .utils import find_object_with_key, find_path_to_key
-
-if TYPE_CHECKING:
-    from ..docker.device_agent.device_agent import device_agent_iface
-
+from ..docker.device_agent.device_agent import DeviceAgentInterface
+from ..utils import call_maybe_async, get_is_async, maybe_async
 
 log = logging.getLogger(__name__)
 ElementT = TypeVar("ElementT", bound=Element)
@@ -36,14 +34,16 @@ class UIManager:
     def __init__(
         self,
         agent_id: str = None,
-        client: Union[Client, "device_agent_iface"] = None,
+        client: Union[Client, DeviceAgentInterface] = None,
         auto_start: bool = False,
         min_ui_update_period: int = 600,
         min_observed_update_period: int = 4,
+        is_async: bool = None,
     ):
+        self._is_async = get_is_async(is_async)
         self.client = client
-        # to determine whether we can use event-based logic
-        self._has_persistent_connection = hasattr(client, "dda_uri")
+        # to determine whether we can use event-based logic. some reason we can't
+        self._has_persistent_connection = isinstance(client, DeviceAgentInterface)
         self._subscriptions_ready = False
 
         self.agent_id = agent_id
@@ -139,38 +139,49 @@ class UIManager:
         log.info("Setting up dda subscriptions")
         self.client.add_subscription("ui_state", self.on_state_update)
         self.client.add_subscription("ui_state@wss_connections", self.on_state_wss_update)
-        self.client.add_subscription("ui_cmds", self.on_command_update)
+        self.client.add_subscription("ui_cmds", self.on_command_update_async)
 
         self._subscriptions_ready = True
 
-    def on_state_update(self, _, aggregate: dict[str, Any]):
+    async def on_state_update(self, _, aggregate: dict[str, Any]):
         self._set_new_ui_state(aggregate)
 
-    def on_state_wss_update(self, _, aggregate: dict[str, Any]):
+    async def on_state_wss_update(self, _, aggregate: dict[str, Any]):
         self.last_ui_state_wss_connections = aggregate
         self.last_ui_state_wss_connections_update = time.time()
 
-    def on_command_update(self, _, aggregate: dict[str, Any]):
-        prev_agg = copy.deepcopy(self.last_ui_cmds)
+    def _on_command_update_common(self, aggregate: dict[str, Any]):
         aggregate = self._set_new_ui_cmds(aggregate)
-
-        # call all subscribed to cmds updates
-        for c in self._cmds_subscriptions:
-            c()
 
         # add commands that don't currently exist
         to_add = {k: v for k, v in aggregate.items() if k not in self._interactions}
         for name, current_value in to_add.items():
             self._interactions[name] = SlimCommand(name, current_value)
 
+        return aggregate
+
+    def on_command_update(self, _, aggregate: dict[str, Any]):
+        self._on_command_update_common(aggregate)
+
+    async def on_command_update_async(self, _, aggregate: dict[str, Any]):
+        prev_agg = copy.deepcopy(self.last_ui_cmds)
+        aggregate = self._on_command_update_common(aggregate)
+        # call all subscribed to cmds updates
+        for c in self._cmds_subscriptions:
+            await call_maybe_async(c)
+
         # work out command diff and call individual commands
         changed = {c: v for c, v in aggregate.items() if v != prev_agg.get(c)}
         for command_name, new_value in changed.items():
             command = self.get_command(command_name)
             if command is not None:
-                command._handle_new_value(new_value)
+                await command._handle_new_value(new_value)
 
     def _set_new_ui_cmds(self, payload: dict[str, Any]):
+        if not payload:
+            log.info("Received empty UI commands payload.")
+            payload = {}
+
         if isinstance(payload, str):
             try:
                 payload = json.loads(payload)
@@ -298,7 +309,6 @@ class UIManager:
         return find_object_with_key(self.last_ui_state, element_name)
 
     def update_variable(self, variable_name: str, value: Any, critical: bool = False) -> bool:
-        logging.info(f"updating variable called {variable_name} to a value of {value}")
         element = self._base_container.get_element(variable_name)
         if not (element and isinstance(element, Variable)):
             return False
@@ -344,13 +354,13 @@ class UIManager:
 
         return ShouldPushUpdate.do_nothing
 
-    def handle_comms(self, force_log: bool = False):
+    async def handle_comms(self, force_log: bool = False):
         should_push = self._should_push_update()
 
         if force_log is False and should_push is ShouldPushUpdate.do_nothing:
             return  # don't need to push anything yet...
 
-        self.push(record_log=force_log or should_push is ShouldPushUpdate.push_and_log)
+        await self.push_async(record_log=force_log or should_push is ShouldPushUpdate.push_and_log)
 
     def _publish_to_channel(self, channel_name: str, data: dict[str, Any], record_log: bool = True, timestamp: Optional[datetime] = None, **kwargs):
         # this purely exists to provide cross-compatibility between clients (hence private method).
@@ -361,6 +371,14 @@ class UIManager:
             # fixme: allow for timestamp in DDA message publishing...
             return self.client.publish_to_channel(channel_name, data, record_log=record_log, **kwargs)
 
+    async def _publish_to_channel_async(self, channel_name: str, data: dict[str, Any], record_log: bool = True, timestamp: Optional[datetime] = None, **kwargs):
+        if isinstance(self.client, Client):
+            # in theory this works but lets just discourage this behaviour...
+            raise RuntimeError("Cannot push async with a Client object")
+
+        return await self.client.publish_to_channel_async(channel_name, data, record_log=record_log, **kwargs)
+
+    @maybe_async()
     def pull(self):
         print("pulling...")
         if isinstance(self.client, Client):
@@ -378,49 +396,59 @@ class UIManager:
         # self._set_new_ui_cmds(ui_cmds_agg)
         self.on_command_update(None, ui_cmds_agg)
 
+    async def pull_async(self):
+        if isinstance(self.client, Client):
+            raise RuntimeError("Cannot pull async with a Client object")
+
+        ui_cmds_agg = await self.client.get_channel_aggregate_async("ui_cmds")
+        ui_state_agg = await self.client.get_channel_aggregate_async("ui_state")
+        self._set_new_ui_state(ui_state_agg)
+        # self._set_new_ui_cmds(ui_cmds_agg)
+        await self.on_command_update_async(None, ui_cmds_agg)
+
+    def _check_dda_ready(self):
+        if not self._is_conn_ready():
+            log.warning("Attempted to push config without ready connection client.")
+            return False
+        elif not self.client.get_has_dda_been_online():
+            # for a persistent connection, don't push if we haven't first pulled last data
+            # HTTP-based connections will do a pull before pushing so that is fine.
+            log.warning("Attempted to push config without DDA being online.")
+            return False
+        elif self.last_ui_state_update is None:
+            log.warning("Waiting for UI state update to be pulled before pushing...")
+            return False
+        elif self.last_ui_cmds_update is None:
+            log.warning("Waiting for UI commands to be pulled before pushing...")
+            return False
+        return True
+
+    @maybe_async()
     def push(self,
             record_log: bool = True,
             should_remove: bool = True,
             timestamp: Optional[datetime] = None,
             even_if_empty: bool = False,
             only_channels: Optional[list] = None,
-            publish_fields: Optional[list] = [],
+            publish_fields: Optional[list] = None,
         ) -> bool:
+        publish_fields = publish_fields or []
+
         # self.check_dda()
         if self._has_persistent_connection:
-            if not self._is_conn_ready():
-                log.warning("Attempted to push config without ready connection client.")
-                return False
-            elif not self.client.get_has_dda_been_online():
-                # for a persistent connection, don't push if we haven't first pulled last data
-                # HTTP-based connections will do a pull before pushing so that is fine.
-                log.warning("Attempted to push config without DDA being online.")
-                return False
-            elif self.last_ui_state_update is None:
-                log.warning("Waiting for UI state update to be pulled before pushing...")
-                return False
-            elif self.last_ui_cmds_update is None:
-                log.warning("Waiting for UI commands to be pulled before pushing...")
+            if not self._check_dda_ready():
                 return False
         else:
             self.pull()  # do a pull before HTTP client pushes anything...
 
         print("pushing...")
         commands_update = self._get_commands_update(publish_fields=publish_fields)
-        if commands_update is not None:
-            ui_cmds_msg = {"cmds": commands_update}
-
-            if only_channels is None or "ui_cmds" in only_channels:
-                self._publish_to_channel("ui_cmds", ui_cmds_msg, timestamp=timestamp)
+        if commands_update is not None and (only_channels is None or "ui_cmds" in only_channels):
+            self._publish_to_channel("ui_cmds", {"cmds": commands_update}, timestamp=timestamp)
 
         ui_state_update = self._get_ui_state_update(should_remove=should_remove, retain_fields=publish_fields)
-        if ui_state_update is not None:
-            if only_channels is None or "ui_state" in only_channels:
-                self._publish_to_channel("ui_state", ui_state_update, record_log=record_log, timestamp=timestamp)
-        elif even_if_empty:
-            if only_channels is None or "ui_state" in only_channels:
-                print("pushing empty ui state")
-                self._publish_to_channel("ui_state", {}, record_log=record_log, timestamp=timestamp)
+        if even_if_empty or (ui_state_update is not None and (only_channels is None or "ui_state" in only_channels)):
+            self._publish_to_channel("ui_state", ui_state_update or {}, record_log=record_log, timestamp=timestamp)
         else:
             print("not pushing empty ui state")
 
@@ -428,12 +456,52 @@ class UIManager:
         self._has_critical_interaction_pending = False
         return True
 
+    async def push_async(self,
+        record_log: bool = True,
+        should_remove: bool = True,
+        timestamp: Optional[datetime] = None,
+        even_if_empty: bool = False,
+        only_channels: Optional[list] = None,
+        publish_fields: Optional[list] = None,
+    ) -> bool:
+        publish_fields = publish_fields or []
+
+        # self.check_dda()
+        if self._has_persistent_connection:
+            if not self._check_dda_ready():
+                return False
+        else:
+            self.pull()  # do a pull before HTTP client pushes anything...
+
+        print("pushing...")
+        commands_update = self._get_commands_update(publish_fields=publish_fields)
+        if commands_update is not None and (only_channels is None or "ui_cmds" in only_channels):
+            await self._publish_to_channel_async("ui_cmds", {"cmds": commands_update}, timestamp=timestamp)
+
+        ui_state_update = self._get_ui_state_update(should_remove=should_remove, retain_fields=publish_fields)
+        if even_if_empty or (ui_state_update is not None and (only_channels is None or "ui_state" in only_channels)):
+            await self._publish_to_channel_async("ui_state", ui_state_update or {}, record_log=record_log, timestamp=timestamp)
+        else:
+            print("not pushing empty ui state")
+
+        self._last_pushed_time = time.time()
+        self._has_critical_interaction_pending = False
+        return True
+
+    @maybe_async()
     def clear_ui(self):
         # this could be dangerous...
         log.info("Clearing UI")
         self._publish_to_channel("ui_state", {"state": None})
 
-    def _get_commands_update(self, publish_fields: Optional[list] = []) -> Optional[dict[str, Any]]:
+    async def clear_ui_async(self):
+        log.info("Clearing UI")
+        await self._publish_to_channel_async("ui_state", {"state": None})
+
+    def _get_commands_update(self, publish_fields: Optional[list] = None) -> Optional[dict[str, Any]]:
+        if publish_fields is None:
+            publish_fields = []
+
         cloud_commands = copy.deepcopy(self.last_ui_cmds)
         local_commands = {k: v._json_safe_current_value() for k, v in self._interactions.items()}
 

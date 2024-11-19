@@ -50,6 +50,9 @@ class Message:
         data = self.client._get_message_raw(self.channel_id, self.id)
         self._from_data(data)
 
+    def delete(self):
+        self.client._delete_message_raw(self.channel_id, self.id)
+
     def fetch_payload(self):
         if self._payload is not None:
             return self._payload
@@ -61,6 +64,8 @@ class Message:
     def get_age(self):
         return time.time() - self.timestamp
 
+    def get_timestamp(self):
+        return datetime.fromtimestamp(self.timestamp)
 
     @staticmethod
     def from_csv_export(client, csv_file_path):

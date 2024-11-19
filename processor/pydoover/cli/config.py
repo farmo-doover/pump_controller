@@ -72,9 +72,9 @@ class ConfigManager:
     directory = os.path.expanduser("~/.doover")
     filepath = os.path.join(directory, "config")
 
-    def __init__(self):
+    def __init__(self, current_profile: str = None):
         self.entries = {}
-        self.current_profile = None
+        self.current_profile = current_profile
         self.read()
 
     @property

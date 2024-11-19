@@ -22,6 +22,7 @@ class Element:
         layout: str = None,  # not sure of type
         component_url: str = None,  # not sure of type
         position: Optional[int] = None, # 100,
+        conditions: Optional[dict] = None,
         **kwargs
     ):
         self.name = name
@@ -35,7 +36,7 @@ class Element:
         self.layout = layout
         self.component_url = component_url
         self.position = position
-
+        self.conditions = conditions
     def to_dict(self):
         to_return = {
             "name": self.name,
@@ -50,6 +51,7 @@ class Element:
             "layout": self.layout,
             "componentUrl": self.component_url,
             "position": self.position,
+            "conditions": self.conditions,
         }
         # filter out any null values
         return {k: v for k, v in to_return.items() if v is not None}

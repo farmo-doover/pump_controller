@@ -42,8 +42,14 @@ class Client:
         agent_id: str = None,
         verify: bool = True,
         login_callback: Callable = None,
+        config_profile: str = "default",
+        debug: bool = False,
     ):
-        self.access_token = AccessToken(token, token_expires)
+        
+        self.access_token = None
+        if token:
+            self.access_token = AccessToken(token, token_expires)
+        
         self.agent_id = agent_id
         self.login_callback = login_callback
 
@@ -55,11 +61,31 @@ class Client:
         self.session = requests.Session()
 
         self.request_retries = 1
-        self.request_timeout = 25
+        self.request_timeout = 59
+
+        if debug:
+            logging.basicConfig(level=logging.DEBUG)
 
         if not ((username and password) or token):
-            raise RuntimeError("Must have username and password or access token set.")
-        elif token:
+            # fixme: work out these circular imports properly...
+            from ...cli.config import ConfigManager
+
+            self.config_manager = ConfigManager(config_profile)
+            self.config_manager.read()
+
+            config = self.config_manager.current
+            if not config:
+                raise RuntimeError(f"No configuration found for profile {self.config_manager.current_profile}. "
+                                   f"Please specify a profile with the `config_profile` parameter, "
+                                   f"manually set a token or `doover login`")
+
+            self.agent_id = config.agent_id
+            self.username = config.username
+            self.password = config.password
+            self.access_token = AccessToken(config.token, config.token_expires)
+            self.base_url = config.base_url
+
+        if self.access_token:
             self.update_headers()
 
     def update_headers(self):
@@ -162,9 +188,21 @@ class Client:
     def _get_message_raw(self, channel_id: str, message_id: str) -> dict[str, Any]:
         return self.request(Route("GET", "/ch/v1/channel/{}/message/{}", channel_id, message_id))
 
+    def get_channel_messages_in_window(self, channel_id: str, start: datetime, end: datetime) -> list[Message]:
+        start = str(int(start.timestamp()))
+        end = str(int(end.timestamp()))
+        data = self.request(Route("GET", "/ch/v1/channel/{}/messages/time/{}/{}/", channel_id, start, end))
+        if not data:
+            return []
+
+        return [Message(client=self, data=m, channel_id=channel_id) for m in data["messages"]]
+
     def get_message(self, channel_id: str, message_id: str) -> Optional[Message]:
         data = self._get_message_raw(channel_id, message_id)
         return data and Message(client=self, data=data, channel_id=channel_id)
+
+    def _delete_message_raw(self, channel_id: str, message_id: str) -> bool:
+        return self.request(Route("DELETE", "/ch/v1/channel/{}/message/{}", channel_id, message_id))
 
     def create_channel(self, channel_name: str, agent_id: str) -> T:
         try:
@@ -282,6 +320,7 @@ class Client:
         try:
             data = res.json()
         except requests.exceptions.JSONDecodeError:
+            print(res.text)
             raise RuntimeError("Failed to get temporary token. Login failed.")
 
         # FIXME: can these expire in UTC?
