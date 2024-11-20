@@ -16,13 +16,15 @@ from .variable import Variable
 from ..cloud.api import Client
 
 from .utils import find_object_with_key, find_path_to_key
-from ..docker.device_agent.device_agent import DeviceAgentInterface
+#from ..docker.device_agent.device_agent import DeviceAgentInterface
 from ..utils import call_maybe_async, get_is_async, maybe_async
 
 log = logging.getLogger(__name__)
 ElementT = TypeVar("ElementT", bound=Element)
 InteractionT = TypeVar("InteractionT", bound=Interaction)
 
+class DeviceAgentInterface:
+    pass
 
 class ShouldPushUpdate(enum.Enum):
     push_and_log = 1

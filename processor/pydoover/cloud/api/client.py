@@ -31,6 +31,7 @@ class Route:
 
 
 class Client:
+    """API Client for Doover Cloud"""
 
     def __init__(
         self,
@@ -281,7 +282,15 @@ class Client:
     def get_tunnel_endpoints(self, agent_id: str, endpoint_type: str):
         return self.request(Route("GET", "/ch/v1/agent/{}/ngrok_tunnels/{}/", agent_id, endpoint_type))
 
-    def login(self):
+    def fetch_token(self):
+        """Fetch a temporary token from the cloud API.
+
+        By default, this uses the username and password set in the client, and will fail if this is not set.
+
+        You can override this to implement a custom token refresher, e.g. using the device agent websocket connection.
+
+        This must return a tuple of (token, expires_at, agent_id).
+        """
         if not (self.username or self.password):
             raise RuntimeError("Must have username and password set since access token has expired.")
 
@@ -326,12 +335,21 @@ class Client:
         # FIXME: can these expire in UTC?
         difference = timedelta(seconds=float(data["valid_until"]) - float(data["current_time"]))
         expires_at = datetime.utcnow() + difference
-        
-        self.access_token = AccessToken(token=data["token"], expires_at=expires_at)
-        self.agent_id = data["agent_id"]
+        return data["token"], expires_at, data["agent_id"]
+
+    def login(self):
+        token, expires_at, agent_id = self.fetch_token()
+        self._set_login_data(token, expires_at, agent_id)
+
+    def _set_login_data(self, token, expires_at, agent_id):
+        self.access_token = AccessToken(token=token, expires_at=expires_at)
+        self.agent_id = agent_id
         self.update_headers()
 
-        logging.info(f"Successfully logged in and set token to expire in {int(difference.total_seconds()/60)}min...")
+        logging.info(
+            f"Successfully logged in and set token to expire "
+            f"in {int((expires_at - datetime.utcnow()).total_seconds()/60)}min..."
+        )
         try:
             self.login_callback()
         except Exception as e:
