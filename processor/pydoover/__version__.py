@@ -6,7 +6,7 @@ Information about the current version of the py-package-template package.
 
 __title__ = 'pydoover'
 __description__ = 'Python package for interacting with Doover'
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 __author__ = 'Doover Team'
 __author_email__ = 'developers@doover.com'
 __license__ = 'None'

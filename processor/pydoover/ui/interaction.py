@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Optional
 
 from .element import Element
 from .misc import Colour, Option
-
+from ..utils import call_maybe_async
 
 if TYPE_CHECKING:
     from .manager import UIManager
@@ -75,7 +75,7 @@ class Interaction(Element):
         else:
             return new_value
 
-    def _handle_new_value(self, new_value: Any):
+    async def _handle_new_value(self, new_value: Any):
         try:
             new_value = self.transform_check(new_value)
         except Exception as e:
@@ -83,11 +83,11 @@ class Interaction(Element):
             return
 
         self.current_value = new_value
-
-        try:
-            self.callback(new_value)
-        except Exception as e:
-            log.error(f"Error in callback for {self.name}: {e}")
+        await call_maybe_async(self.callback, new_value)
+        # try:
+        #     self.callback(new_value)
+        # except Exception as e:
+        #     log.error(f"Error in callback for {self.name}: {e}")
 
     def coerce(self, value: Any, critical: bool = False):
         if critical and self._manager and value != self.current_value:

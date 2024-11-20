@@ -82,6 +82,9 @@ class Channel:
         self._messages = self.client.get_channel_messages(self.id, num_messages=num_messages)
         return self._messages
 
+    def fetch_messages_in_window(self, window_start: datetime, window_end: datetime):
+        return self.client.get_channel_messages_in_window(self.id, window_start, window_end)
+
     def publish(self, data: Any, save_log: bool = True, log_aggregate: bool = False, override_aggregate: bool = False, timestamp: Optional[datetime] = None):
         return self.client.publish_to_channel(self.id, data, save_log, log_aggregate, override_aggregate, timestamp)
 
@@ -143,8 +146,11 @@ class Processor(Channel):
         logging.basicConfig(level=logging.DEBUG)
         sys.path.append(package_dir)
 
+        # Construct the full path to "target.py" within package_dir
+        target_path = os.path.join(package_dir, "target.py")
+
         ## import the loaded generator file
-        spec = importlib.util.spec_from_file_location("target", "target.py")
+        spec = importlib.util.spec_from_file_location("target", target_path)
         target_task = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(target_task)
 
@@ -197,12 +203,12 @@ class Task(Channel):
     def unsubscribe_from_channel(self, channel_id: str):
         return self.client.unsubscribe_from_channel(channel_id, self.id)
 
-    def invoke_locally(self, package_dir, msg_obj, agent_settings):
+    def invoke_locally(self, package_dir, msg_obj, agent_settings, agent_id=None):
         processor = self.fetch_processor()
         if processor is None:
             return
         
-        agent_id = self.client.agent_id
+        agent_id = agent_id or self.client.agent_id
         access_token = self.client.access_token.token
         api_endpoint = self.client.base_url
         package_config = self.fetch_aggregate()

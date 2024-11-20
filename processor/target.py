@@ -79,6 +79,17 @@ class target(ProcessorBase):
             self._tank_sensor = TankSensor(self.get_farmo_client(), target_tank_imei)
         return self._tank_sensor
 
+    def auto_select_tank_sensor(self):
+        available_tank_sensors = self.get_available_tank_sensors()
+        if available_tank_sensors:
+            tank_sensor_obj = available_tank_sensors[0]
+            self.ui_manager.coerce_command("targetSensor", str(tank_sensor_obj["IMEI"]))
+            self._tank_sensor = TankSensor(self.get_farmo_client(), str(tank_sensor_obj["IMEI"]))
+            return self._tank_sensor
+        else:
+            logging.warning("No available tank sensors found")
+            return None
+
     def get_available_tank_sensors(self):
         tank_sensors = self.get_agent_config("TANK_SENSORS")
         if not tank_sensors:
@@ -185,7 +196,8 @@ class target(ProcessorBase):
         if tank_level_triggers:
             tank_sensor_obj = self.get_tank_sensor_obj()
             if not tank_sensor_obj:
-                logging.warning("Tank sensor not found.")
+                logging.warning("Tank sensor not found, attempting to select a tank sensor from available tank sensors")
+                tank_sensor_obj = self.auto_select_tank_sensor()
             result = tank_sensor_obj.set_tank_threshold(tank_level_triggers[0], tank_level_triggers[1])
             logging.info(f"Result of setting tank thresholds: {result}")
 
@@ -470,7 +482,7 @@ class target(ProcessorBase):
                     "timeslots":[]
                 }
                 for timeslot in schedule["timeslots"]:
-                    if timeslot["start_time"] <= current_time + 30:
+                    if timeslot["end_time"] <= current_time + 30:
                         logging.info("timeslot is in the past - skipping")
                         continue
                     new_item["timeslots"].append({
