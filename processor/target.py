@@ -83,8 +83,8 @@ class target(ProcessorBase):
         available_tank_sensors = self.get_available_tank_sensors()
         if available_tank_sensors:
             tank_sensor_obj = available_tank_sensors[0]
-            self.ui_manager.coerce_command("targetSensor", tank_sensor_obj["IMEI"])
-            self._tank_sensor = TankSensor(self.get_farmo_client(), tank_sensor_obj["IMEI"])
+            self.ui_manager.coerce_command("targetSensor", str(tank_sensor_obj["IMEI"]))
+            self._tank_sensor = TankSensor(self.get_farmo_client(), str(tank_sensor_obj["IMEI"]))
             return self._tank_sensor
         else:
             logging.warning("No available tank sensors found")
